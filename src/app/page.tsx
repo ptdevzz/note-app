@@ -1,0 +1,634 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import MobileContainer from '@/components/MobileContainer';
+import BottomNav, { TabType } from '@/components/BottomNav';
+import PokeLoveEffect from '@/components/PokeLoveEffect';
+import LoveNoteSection from '@/components/LoveNoteSection';
+import SpinWheelModal from '@/components/SpinWheelModal';
+import TikTokAddModal from '@/components/TikTokAddModal';
+import LoveCouponsModal from '@/components/LoveCouponsModal';
+import DatePickerModal from '@/components/DatePickerModal';
+import CheckinModal from '@/components/CheckinModal';
+import DateMemoriesScrapbook from '@/components/DateMemoriesScrapbook';
+import CurrentWeekendView from '@/components/CurrentWeekendView';
+import PasscodeGate from '@/components/PasscodeGate';
+import PhotoboothVault from '@/components/PhotoboothVault';
+import WeekendCountdownWidget from '@/components/WeekendCountdownWidget';
+import ClipboardAutoDetectBanner from '@/components/ClipboardAutoDetectBanner';
+import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory } from '@/lib/types';
+import { dataService } from '@/lib/dataService';
+import { getWeekendForWeekOffset } from '@/lib/dateUtils';
+import { 
+  Plus, Search, Sparkles, MapPin, ExternalLink, Calendar as CalendarIcon, CheckCircle2, 
+  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation
+} from 'lucide-react';
+
+function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
+  const [activeTab, setActiveTab] = useState<TabType>('home');
+  const [places, setPlaces] = useState<PlaceItem[]>([]);
+  const [coupons, setCoupons] = useState<LoveCoupon[]>([]);
+  const [photobooths, setPhotobooths] = useState<PhotoboothMemory[]>([]);
+  const [loveNote, setLoveNote] = useState('');
+  const [mood, setMood] = useState<MoodStatus>({ emoji: '🥰', label: 'Vui vẻ', updatedAt: 'Hôm nay', by: 'Bé Yêu' });
+  
+  // User Perspective Role: 'GF' (Bé Yêu) vs 'BF' (Anh iu) - Determined automatically by Passcode!
+  const [currentRole, setCurrentRole] = useState<'GF' | 'BF'>(defaultRole);
+
+  useEffect(() => {
+    setCurrentRole(defaultRole);
+  }, [defaultRole]);
+
+  // Week navigation state
+  const [selectedWeekOffset, setSelectedWeekOffset] = useState<number>(0);
+  const currentSelectedWeekend = getWeekendForWeekOffset(selectedWeekOffset);
+
+  // Mode in Plan Tab: 'current' (Tuần này gần nhất) vs 'calendar' (Tất cả các tuần)
+  const [planMode, setPlanMode] = useState<'current' | 'calendar'>('current');
+
+  // UI Modals
+  const [isSpinOpen, setIsSpinOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [datePickerPlace, setDatePickerPlace] = useState<PlaceItem | null>(null);
+  const [checkinPlace, setCheckinPlace] = useState<PlaceItem | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
+
+  // Load Data
+  const loadAllData = async () => {
+    const p = await dataService.getPlaces();
+    const c = await dataService.getCoupons();
+    const pb = await dataService.getPhotobooths();
+    const n = await dataService.getLoveNote();
+    const m = await dataService.getMood();
+    setPlaces(p);
+    setCoupons(c);
+    setPhotobooths(pb);
+    setLoveNote(n);
+    setMood(m);
+  };
+
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  // Handlers
+  const handleAddPlace = async (newItem: any) => {
+    await dataService.addPlace(newItem);
+    await loadAllData();
+  };
+
+  const handleAssignDate = async (placeId: string, dateStr: string | null) => {
+    const newStatus = dateStr ? 'PLANNED' : 'SAVED';
+    await dataService.updatePlace(placeId, { status: newStatus, plannedDate: dateStr });
+    await loadAllData();
+  };
+
+  const handleToggleVisited = (place: PlaceItem) => {
+    if (place.status === 'VISITED') {
+      dataService.updatePlace(place.id, { status: 'SAVED' }).then(loadAllData);
+    } else {
+      setCheckinPlace(place);
+    }
+  };
+
+  const handleSaveReview = async (id: string, rating: number, notes: string, costEstimate?: number, photoUrl?: string) => {
+    await dataService.updatePlace(id, {
+      status: 'VISITED',
+      rating,
+      notes,
+      costEstimate,
+      photoUrl,
+    });
+    await loadAllData();
+  };
+
+  const handleDeletePlace = async (id: string) => {
+    await dataService.deletePlace(id);
+    await loadAllData();
+  };
+
+  const handleSaveNote = async (newNote: string) => {
+    await dataService.updateLoveNote(newNote);
+    setLoveNote(newNote);
+  };
+
+  const handleUseCoupon = async (id: string) => {
+    await dataService.useCoupon(id);
+    await loadAllData();
+  };
+
+  const handleAddPhotobooth = async (item: Omit<PhotoboothMemory, 'id' | 'createdAt'>) => {
+    await dataService.addPhotobooth(item);
+    await loadAllData();
+  };
+
+  const handleDeletePhotobooth = async (id: string) => {
+    await dataService.deletePhotobooth(id);
+    await loadAllData();
+  };
+
+  const handleMoodSelect = async (emoji: string, label: string) => {
+    const newMood = {
+      emoji,
+      label,
+      updatedAt: 'Vừa xong',
+      by: currentRole === 'GF' ? 'Bé Yêu' : 'Anh iu'
+    };
+    await dataService.updateMood(newMood);
+    setMood(newMood);
+  };
+
+  // Google Maps Helper
+  const openGoogleMaps = (title: string, tags: string[]) => {
+    const queryStr = `${title} ${tags.join(' ')}`;
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryStr)}`;
+    window.open(url, '_blank');
+  };
+
+  // Filtering
+  const filteredPlaces = places.filter((p) => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCat = selectedCategory === 'Tất cả' || p.category === selectedCategory;
+    return matchesSearch && matchesCat;
+  });
+
+  const plannedSat = places.filter((p) => p.status === 'PLANNED' && p.plannedDate === currentSelectedWeekend.saturday);
+  const plannedSun = places.filter((p) => p.status === 'PLANNED' && p.plannedDate === currentSelectedWeekend.sunday);
+  const visitedPlaces = places.filter((p) => p.status === 'VISITED');
+
+  return (
+    <MobileContainer>
+      {/* Auto Detect Clipboard Banner */}
+      <div className="px-1 pt-1">
+        <ClipboardAutoDetectBanner onAddPlace={handleAddPlace} />
+      </div>
+
+      {/* --- TAB 1: HOME --- */}
+      {activeTab === 'home' && (
+        <div className="space-y-4 pb-4 animate-in fade-in duration-200">
+          {/* Interactive Love Widget */}
+          <PokeLoveEffect
+            currentRole={currentRole}
+            partnerName={currentRole === 'GF' ? (localStorage.getItem('admin_partner1') || 'Bạn Trai') : (localStorage.getItem('admin_partner2') || 'Bạn Gái')}
+          />
+
+          {/* Realtime Weekend Date Countdown Clock */}
+          <WeekendCountdownWidget
+            places={places}
+            partnerEmail={typeof window !== 'undefined' ? localStorage.getItem('admin_email') || '' : ''}
+          />
+
+          {/* Secret Daily Love Note */}
+          <LoveNoteSection
+            note={loveNote}
+            onSaveNote={handleSaveNote}
+            partnerName="Mỗi Ngày"
+          />
+
+          {/* Girlfriend Mood Tracker */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <Smile className="w-4 h-4 text-amber-400" />
+                <h3 className="text-xs font-bold text-slate-200">Tâm Trạng Hôm Nay</h3>
+              </div>
+              <span className="text-[10px] text-slate-400">{mood.updatedAt}</span>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800/80 flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <span className="text-3xl">{mood.emoji}</span>
+                <div>
+                  <span className="text-xs font-bold text-slate-100">{mood.label}</span>
+                  <p className="text-[10px] text-slate-400">Cập nhật bởi {mood.by}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-400 mb-2 font-medium">Bạn muốn cập nhật tâm trạng?</div>
+            <div className="flex justify-between gap-1.5">
+              {[
+                { emoji: '🥰', label: 'Yêu đời' },
+                { emoji: '🤤', label: 'Thèm trà sữa' },
+                { emoji: '😾', label: 'Đang dỗi' },
+                { emoji: '😴', label: 'Lười lười' },
+                { emoji: '🥳', label: 'Muốn đi chơi' },
+              ].map((m) => (
+                <button
+                  key={m.label}
+                  onClick={() => handleMoodSelect(m.emoji, m.label)}
+                  className={`flex-1 p-2 rounded-xl border text-center transition-transform active:scale-95 ${
+                    mood.label === m.label
+                      ? 'bg-rose-500/20 border-rose-500 text-rose-200 font-bold'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <div className="text-lg">{m.emoji}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Weekend Banner */}
+          <div 
+            onClick={() => setActiveTab('plan')}
+            className="bg-gradient-to-r from-purple-900/40 via-slate-900 to-rose-900/40 border border-slate-800 rounded-3xl p-4 shadow-md flex items-center justify-between cursor-pointer hover:border-slate-700 transition-colors"
+          >
+            <div>
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-purple-300">
+                <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span>Lịch Hẹn Cuối Tuần Này Gần Nhất</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                {currentSelectedWeekend.saturdayDisplay} & {currentSelectedWeekend.sundayDisplay} ({plannedSat.length + plannedSun.length} món)
+              </p>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsSpinOpen(true);
+              }}
+              className="bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-xs font-bold px-3 py-2.5 rounded-2xl shadow-lg shadow-purple-600/30 flex items-center space-x-1.5 shrink-0"
+            >
+              <Dices className="w-4 h-4" />
+              <span>Xoay 🎲</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB 2: TIKTOK FEED / COLLECTION --- */}
+      {activeTab === 'tiktok' && (
+        <div className="space-y-4 pb-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-white">Bộ Sưu Tập</h2>
+              <p className="text-xs text-slate-400">Các địa điểm & hoạt động 2 đứa đã lưu</p>
+            </div>
+            <button
+              onClick={() => setIsAddOpen(true)}
+              className="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-lg shadow-rose-500/25 flex items-center space-x-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm Mới</span>
+            </button>
+          </div>
+
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên quán, quận (vd: Q1, Lẩu)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500/60"
+            />
+          </div>
+
+          <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-none">
+            {['Tất cả', 'Ăn sáng', 'Ăn tối', 'Cà phê & Chill', 'Vui chơi'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
+                  selectedCategory === cat
+                    ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {filteredPlaces.length === 0 ? (
+            <div className="text-center py-10 bg-slate-900/50 border border-slate-800/60 rounded-3xl p-6">
+              <Sparkles className="w-8 h-8 text-rose-400/50 mx-auto mb-2" />
+              <p className="text-xs text-slate-400 font-medium">Chưa tìm thấy địa điểm nào.</p>
+              <button
+                onClick={() => setIsAddOpen(true)}
+                className="mt-3 text-xs text-rose-400 font-bold hover:underline"
+              >
+                + Bấm nút cộng để thêm hoạt động đầu tiên
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredPlaces.map((place) => (
+                <div
+                  key={place.id}
+                  className="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden p-3 shadow-md hover:border-slate-700 transition-colors relative"
+                >
+                  <div className="flex space-x-3">
+                    <img
+                      src={place.thumbnail}
+                      alt={place.title}
+                      className="w-20 h-20 object-cover rounded-xl border border-slate-800 shrink-0"
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {place.category}
+                        </span>
+                        <span className="text-[10px] text-slate-500">Bởi {place.createdBy}</span>
+                      </div>
+
+                      <h3 className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug">
+                        {place.title}
+                      </h3>
+
+                      <div className="flex items-center space-x-2 mt-2">
+                        {place.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center space-x-0.5 text-[10px] text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded-md border border-slate-800"
+                          >
+                            <MapPin className="w-2.5 h-2.5 text-rose-400" />
+                            <span>{tag}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2">
+                      {place.tiktokUrl ? (
+                        <a
+                          href={place.tiktokUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-slate-400 hover:text-rose-400 font-semibold flex items-center space-x-1 text-[11px]"
+                        >
+                          <span>TikTok</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : null}
+
+                      <button
+                        onClick={() => openGoogleMaps(place.title, place.tags)}
+                        className="text-emerald-400 hover:underline font-semibold flex items-center space-x-1 text-[11px]"
+                      >
+                        <Navigation className="w-3 h-3" />
+                        <span>Chỉ đường</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setDatePickerPlace(place)}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1 transition-colors ${
+                          place.status === 'PLANNED'
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        <CalendarIcon className="w-3 h-3" />
+                        <span>
+                          {place.plannedDate
+                            ? `${place.plannedDate.split('-').slice(1).reverse().join('/')}`
+                            : '+ Xếp Lịch'}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleVisited(place)}
+                        className={`p-1 rounded-xl transition-colors ${
+                          place.status === 'VISITED' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeletePlace(place.id)}
+                        className="p-1 text-slate-600 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- TAB 3: CURRENT WEEKEND DETAILED VIEW --- */}
+      {activeTab === 'plan' && (
+        <div className="space-y-4 pb-4">
+          {/* Top Sub-tab switcher: Tuần Này Gần Nhất vs Xem Nhiều Tuần */}
+          <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800">
+            <button
+              onClick={() => {
+                setPlanMode('current');
+                setSelectedWeekOffset(0);
+              }}
+              className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-all ${
+                planMode === 'current'
+                  ? 'bg-rose-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Tuần Này Gần Nhất</span>
+            </button>
+
+            <button
+              onClick={() => setPlanMode('calendar')}
+              className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-all ${
+                planMode === 'calendar'
+                  ? 'bg-rose-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Lịch Các Tuần Sau</span>
+            </button>
+          </div>
+
+          {/* Sub-view 1: Current Weekend View */}
+          {planMode === 'current' ? (
+            <CurrentWeekendView
+              places={places}
+              onToggleVisited={handleToggleVisited}
+              onOpenAddModal={() => setIsAddOpen(true)}
+              onOpenSpinWheel={() => setIsSpinOpen(true)}
+              onAssignDate={handleAssignDate}
+            />
+          ) : (
+            /* Sub-view 2: Multi-week Calendar view */
+            <div className="space-y-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 flex items-center justify-between">
+                <button
+                  onClick={() => setSelectedWeekOffset(Math.max(0, selectedWeekOffset - 1))}
+                  disabled={selectedWeekOffset === 0}
+                  className="p-1.5 rounded-xl bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="text-center">
+                  <span className="text-xs font-bold text-rose-300 block">
+                    {currentSelectedWeekend.weekLabel}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {currentSelectedWeekend.saturdayDisplay.replace('Thứ 7, ', '')} - {currentSelectedWeekend.sundayDisplay.replace('Chủ Nhật, ', '')}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setSelectedWeekOffset(selectedWeekOffset + 1)}
+                  className="p-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Saturday Slot */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-7 h-7 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center font-bold text-xs">
+                      T7
+                    </span>
+                    <h3 className="text-xs font-bold text-white">{currentSelectedWeekend.saturdayDisplay}</h3>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-semibold">{plannedSat.length} Hoạt động</span>
+                </div>
+
+                {plannedSat.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic text-center py-4">Chưa xếp hoạt động nào cho ngày này.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {plannedSat.map((item) => (
+                      <div key={item.id} className="bg-slate-950 p-2.5 rounded-2xl border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center space-x-2.5 min-w-0">
+                          <img src={item.thumbnail} alt={item.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-semibold text-slate-200 truncate">{item.title}</h4>
+                            <button
+                              onClick={() => openGoogleMaps(item.title, item.tags)}
+                              className="text-[10px] text-emerald-400 font-semibold flex items-center space-x-0.5 hover:underline"
+                            >
+                              <Navigation className="w-2.5 h-2.5" />
+                              <span>Chỉ đường Maps</span>
+                            </button>
+                          </div>
+                        </div>
+                        <button onClick={() => handleAssignDate(item.id, null)} className="text-slate-500 hover:text-rose-400 p-1 text-xs">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Sunday Slot */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-7 h-7 bg-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center font-bold text-xs">
+                      CN
+                    </span>
+                    <h3 className="text-xs font-bold text-white">{currentSelectedWeekend.sundayDisplay}</h3>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-semibold">{plannedSun.length} Hoạt động</span>
+                </div>
+
+                {plannedSun.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic text-center py-4">Chưa xếp hoạt động nào cho ngày này.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {plannedSun.map((item) => (
+                      <div key={item.id} className="bg-slate-950 p-2.5 rounded-2xl border border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center space-x-2.5 min-w-0">
+                          <img src={item.thumbnail} alt={item.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-semibold text-slate-200 truncate">{item.title}</h4>
+                            <button
+                              onClick={() => openGoogleMaps(item.title, item.tags)}
+                              className="text-[10px] text-emerald-400 font-semibold flex items-center space-x-0.5 hover:underline"
+                            >
+                              <Navigation className="w-2.5 h-2.5" />
+                              <span>Chỉ đường Maps</span>
+                            </button>
+                          </div>
+                        </div>
+                        <button onClick={() => handleAssignDate(item.id, null)} className="text-slate-500 hover:text-rose-400 p-1 text-xs">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- TAB 4: COUPON & PHOTOBOOTH MEMORIES --- */}
+      {activeTab === 'coupons' && (
+        <div className="space-y-6 pb-4 animate-in fade-in duration-200">
+          <LoveCouponsModal coupons={coupons} onUseCoupon={handleUseCoupon} />
+
+          {/* Photobooth & Video Memory Vault */}
+          <PhotoboothVault
+            items={photobooths}
+            onAddPhotobooth={handleAddPhotobooth}
+            onDeletePhotobooth={handleDeletePhotobooth}
+          />
+
+          <DateMemoriesScrapbook visitedPlaces={visitedPlaces} />
+        </div>
+      )}
+
+      {/* Modals */}
+      <SpinWheelModal
+        isOpen={isSpinOpen}
+        onClose={() => setIsSpinOpen(false)}
+        places={places}
+      />
+
+      <TikTokAddModal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onAdd={handleAddPlace}
+      />
+
+      <DatePickerModal
+        isOpen={Boolean(datePickerPlace)}
+        onClose={() => setDatePickerPlace(null)}
+        place={datePickerPlace}
+        onAssignDate={handleAssignDate}
+      />
+
+      <CheckinModal
+        isOpen={Boolean(checkinPlace)}
+        onClose={() => setCheckinPlace(null)}
+        place={checkinPlace}
+        onSaveReview={handleSaveReview}
+      />
+
+      {/* Bottom Mobile Navigation */}
+      <BottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onAddClick={() => setIsAddOpen(true)}
+        savedCount={places.filter((p) => p.status === 'SAVED').length}
+      />
+    </MobileContainer>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <PasscodeGate>
+      {(unlockedRole) => <MainAppContent defaultRole={unlockedRole} />}
+    </PasscodeGate>
+  );
+}
