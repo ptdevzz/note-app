@@ -72,6 +72,14 @@ const INITIAL_COUPONS: LoveCoupon[] = [
     description: 'Dẫn bé yêu đi cửa hàng tiện lợi/siêu thị chọn vô tư những món khoái khẩu.',
     icon: '🛒',
     isUsed: false
+  },
+  {
+    id: 'coupon-8',
+    code: 'MOTORBIKE_RIDE',
+    title: 'Chở Đi Dạo Hóng Gió',
+    description: 'Đặc quyền bắt anh người yêu chở đi vi vu dạo phố hóng gió đêm mát rượi.',
+    icon: '🛵',
+    isUsed: false
   }
 ];
 
