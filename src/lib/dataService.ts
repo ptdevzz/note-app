@@ -616,6 +616,39 @@ export const dataService = {
         console.warn('Lỗi sendNudge Firestore:', e);
       });
     }
+  },
+
+  // --- ADMIN CONFIG REALTIME API ---
+  subscribeConfig(callback: (config: any) => void): () => void {
+    if (isFirebaseConfigured && db) {
+      try {
+        const ref = doc(db, 'settings', 'config');
+        return onSnapshot(ref, (snap) => {
+          if (snap.exists()) {
+            callback(snap.data());
+          }
+        });
+      } catch (e) {
+        console.warn('Lỗi subscribeConfig:', e);
+      }
+    }
+    return () => {};
+  },
+
+  async updateConfig(config: any): Promise<void> {
+    if (typeof window !== 'undefined') {
+      if (config.partner1Name) localStorage.setItem('admin_partner1', config.partner1Name);
+      if (config.partner2Name) localStorage.setItem('admin_partner2', config.partner2Name);
+      if (config.startDate) localStorage.setItem('admin_startdate', config.startDate);
+      if (config.partner2Email) localStorage.setItem('admin_email', config.partner2Email);
+      if (config.passcodeGf) localStorage.setItem('admin_passcode_gf', config.passcodeGf);
+      if (config.passcodeBf) localStorage.setItem('admin_passcode_bf', config.passcodeBf);
+    }
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'settings', 'config'), config, { merge: true }).catch(e => {
+        console.warn('Lỗi updateConfig Firestore:', e);
+      });
+    }
   }
 };
 

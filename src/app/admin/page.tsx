@@ -38,7 +38,7 @@ export default function AdminConfigPage() {
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const loadAllAdminData = async () => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       setPartner1Name(localStorage.getItem('admin_partner1') || 'Anh iu');
       setPartner2Name(localStorage.getItem('admin_partner2') || 'Bé Yêu');
@@ -48,29 +48,38 @@ export default function AdminConfigPage() {
       setPasscodeBf(localStorage.getItem('admin_passcode_bf') || '1008');
     }
 
-    const c = await dataService.getCoupons();
-    const p = await dataService.getPlaces();
-    const n = await dataService.getLoveNote();
+    const unsubPlaces = dataService.subscribePlaces((items) => setPlaces(items));
+    const unsubCoupons = dataService.subscribeCoupons((items) => setCoupons(items));
+    const unsubNote = dataService.subscribeLoveNote((note) => setLoveNote(note));
+    const unsubConfig = dataService.subscribeConfig((config) => {
+      if (config) {
+        if (config.partner1Name) setPartner1Name(config.partner1Name);
+        if (config.partner2Name) setPartner2Name(config.partner2Name);
+        if (config.startDate) setStartDate(config.startDate);
+        if (config.partner2Email) setPartner2Email(config.partner2Email);
+        if (config.passcodeGf) setPasscodeGf(config.passcodeGf);
+        if (config.passcodeBf) setPasscodeBf(config.passcodeBf);
+      }
+    });
 
-    setCoupons(c);
-    setPlaces(p);
-    setLoveNote(n);
-  };
-
-  useEffect(() => {
-    loadAllAdminData();
+    return () => {
+      unsubPlaces();
+      unsubCoupons();
+      unsubNote();
+      unsubConfig();
+    };
   }, []);
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('admin_partner1', partner1Name);
-      localStorage.setItem('admin_partner2', partner2Name);
-      localStorage.setItem('admin_startdate', startDate);
-      localStorage.setItem('admin_email', partner2Email);
-      localStorage.setItem('admin_passcode_gf', passcodeGf.trim() || '1804');
-      localStorage.setItem('admin_passcode_bf', passcodeBf.trim() || '1008');
-    }
+    dataService.updateConfig({
+      partner1Name,
+      partner2Name,
+      startDate,
+      partner2Email,
+      passcodeGf: passcodeGf.trim() || '1804',
+      passcodeBf: passcodeBf.trim() || '1008'
+    });
     dataService.updateLoveNote(loveNote);
 
     setSavedSuccess(true);
