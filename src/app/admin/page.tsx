@@ -89,7 +89,6 @@ export default function AdminConfigPage() {
   // Firebase Direct Coupon Management
   const handleResetCoupon = async (id: string) => {
     await dataService.resetCoupon(id);
-    await loadAllAdminData();
   };
 
   const handleAddCoupon = async (e: React.FormEvent) => {
@@ -106,12 +105,10 @@ export default function AdminConfigPage() {
 
     setNewCouponTitle('');
     setNewCouponDesc('');
-    await loadAllAdminData();
   };
 
   const handleDeleteCoupon = async (id: string) => {
     await dataService.deleteCoupon(id);
-    await loadAllAdminData();
   };
 
   const handleAddAdminPlace = async (e: React.FormEvent) => {
@@ -132,12 +129,10 @@ export default function AdminConfigPage() {
 
     setNewPlaceTitle('');
     setNewPlaceUrl('');
-    await loadAllAdminData();
   };
 
   const handleDeletePlace = async (id: string) => {
     await dataService.deletePlace(id);
-    await loadAllAdminData();
   };
 
   const handleClearAllData = () => {
