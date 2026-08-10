@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -9,6 +9,7 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 let db: Firestore | null = null;
@@ -18,8 +19,16 @@ export const isFirebaseConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API
 
 if (isFirebaseConfigured) {
   try {
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    db = getFirestore(app);
+    let app;
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+      });
+    } else {
+      app = getApp();
+      db = getFirestore(app);
+    }
     auth = getAuth(app);
   } catch (error) {
     console.warn('Cấu hình Firebase chưa đầy đủ, chuyển sang chế độ Mock Storage.', error);

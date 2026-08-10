@@ -16,12 +16,15 @@ import PasscodeGate from '@/components/PasscodeGate';
 import PhotoboothVault from '@/components/PhotoboothVault';
 import WeekendCountdownWidget from '@/components/WeekendCountdownWidget';
 import ClipboardAutoDetectBanner from '@/components/ClipboardAutoDetectBanner';
+import StoryExportModal from '@/components/StoryExportModal';
+import { PlaceCardSkeleton, HomeHeaderSkeleton, PhotoboothGridSkeleton } from '@/components/SkeletonLoader';
 import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory } from '@/lib/types';
 import { dataService } from '@/lib/dataService';
-import { getWeekendForWeekOffset } from '@/lib/dateUtils';
+import { getWeekendForWeekOffset, calculateLoveDays } from '@/lib/dateUtils';
+import confetti from 'canvas-confetti';
 import { 
   Plus, Search, Sparkles, MapPin, ExternalLink, Calendar as CalendarIcon, CheckCircle2, 
-  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation
+  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2
 } from 'lucide-react';
 
 function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
@@ -31,7 +34,14 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
   const [photobooths, setPhotobooths] = useState<PhotoboothMemory[]>([]);
   const [loveNote, setLoveNote] = useState('');
   const [mood, setMood] = useState<MoodStatus>({ emoji: '🥰', label: 'Vui vẻ', updatedAt: 'Hôm nay', by: 'Bé Yêu' });
-  
+  const [isPlacesLoading, setIsPlacesLoading] = useState(true);
+  const [isCouponsLoading, setIsCouponsLoading] = useState(true);
+  const [isPhotoboothsLoading, setIsPhotoboothsLoading] = useState(true);
+  const [isNoteLoading, setIsNoteLoading] = useState(true);
+  const [isMoodLoading, setIsMoodLoading] = useState(true);
+  const [isStoryExportOpen, setIsStoryExportOpen] = useState(false);
+  const [nudgeToast, setNudgeToast] = useState<string | null>(null);
+
   // User Perspective Role: 'GF' (Bé Yêu) vs 'BF' (Anh iu) - Determined automatically by Passcode!
   const [currentRole, setCurrentRole] = useState<'GF' | 'BF'>(defaultRole);
 
@@ -55,39 +65,78 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
 
-  // Load Data
-  const loadAllData = async () => {
-    const p = await dataService.getPlaces();
-    const c = await dataService.getCoupons();
-    const pb = await dataService.getPhotobooths();
-    const n = await dataService.getLoveNote();
-    const m = await dataService.getMood();
-    setPlaces(p);
-    setCoupons(c);
-    setPhotobooths(pb);
-    setLoveNote(n);
-    setMood(m);
-  };
-
+  // Real-time Data Subscriptions (Firebase Firestore + LocalStorage fallback)
   useEffect(() => {
-    loadAllData();
-  }, []);
+    const unsubPlaces = dataService.subscribePlaces((p) => {
+      setPlaces(p);
+      setIsPlacesLoading(false);
+    });
+    const unsubCoupons = dataService.subscribeCoupons((c) => {
+      setCoupons(c);
+      setIsCouponsLoading(false);
+    });
+    const unsubPhotobooths = dataService.subscribePhotobooths((pb) => {
+      setPhotobooths(pb);
+      setIsPhotoboothsLoading(false);
+    });
+    const unsubLoveNote = dataService.subscribeLoveNote((n) => {
+      setLoveNote(n);
+      setIsNoteLoading(false);
+    });
+    const unsubMood = dataService.subscribeMood((m) => {
+      setMood(m);
+      setIsMoodLoading(false);
+    });
+
+    const unsubNudge = dataService.subscribeNudge((nudge) => {
+      if (nudge && nudge.from !== currentRole && Date.now() - nudge.timestamp < 15000) {
+        setNudgeToast(nudge.message);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
+        setTimeout(() => setNudgeToast(null), 8000);
+      }
+    });
+
+    return () => {
+      unsubPlaces();
+      unsubCoupons();
+      unsubPhotobooths();
+      unsubLoveNote();
+      unsubMood();
+      unsubNudge();
+    };
+  }, [currentRole]);
 
   // Handlers
+  const handleSendNudge = async () => {
+    const message = currentRole === 'GF'
+      ? '💕 Bé Yêu vừa chọc anh: "Xem lịch hẹn cuối tuần này nha anh ơi!" 🤏'
+      : '💕 Anh Iu vừa chọc em: "Cuối tuần này có hẹn với anh nha bé ơi!" 🤏';
+    await dataService.sendNudge(currentRole, message);
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: 'banguai@gmail.com',
+        subject: '💕 Lịch Hẹn Cuối Tuần Từ Người Ấy',
+        sender: currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'
+      })
+    }).catch(() => {});
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+    alert('Đã gửi thông báo nhắc hẹn sang máy người ấy! 🔔💕');
+  };
+
   const handleAddPlace = async (newItem: any) => {
     await dataService.addPlace(newItem);
-    await loadAllData();
   };
 
   const handleAssignDate = async (placeId: string, dateStr: string | null) => {
     const newStatus = dateStr ? 'PLANNED' : 'SAVED';
     await dataService.updatePlace(placeId, { status: newStatus, plannedDate: dateStr });
-    await loadAllData();
   };
 
   const handleToggleVisited = (place: PlaceItem) => {
     if (place.status === 'VISITED') {
-      dataService.updatePlace(place.id, { status: 'SAVED' }).then(loadAllData);
+      dataService.updatePlace(place.id, { status: 'SAVED' });
     } else {
       setCheckinPlace(place);
     }
@@ -101,32 +150,26 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
       costEstimate,
       photoUrl,
     });
-    await loadAllData();
   };
 
   const handleDeletePlace = async (id: string) => {
     await dataService.deletePlace(id);
-    await loadAllData();
   };
 
   const handleSaveNote = async (newNote: string) => {
     await dataService.updateLoveNote(newNote);
-    setLoveNote(newNote);
   };
 
   const handleUseCoupon = async (id: string) => {
     await dataService.useCoupon(id);
-    await loadAllData();
   };
 
   const handleAddPhotobooth = async (item: Omit<PhotoboothMemory, 'id' | 'createdAt'>) => {
     await dataService.addPhotobooth(item);
-    await loadAllData();
   };
 
   const handleDeletePhotobooth = async (id: string) => {
     await dataService.deletePhotobooth(id);
-    await loadAllData();
   };
 
   const handleMoodSelect = async (emoji: string, label: string) => {
@@ -137,7 +180,6 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
       by: currentRole === 'GF' ? 'Bé Yêu' : 'Anh iu'
     };
     await dataService.updateMood(newMood);
-    setMood(newMood);
   };
 
   // Google Maps Helper
@@ -147,12 +189,13 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
     window.open(url, '_blank');
   };
 
-  // Filtering
+  // Filtering (Show all places except those already PLANNED or VISITED)
   const filteredPlaces = places.filter((p) => {
+    const isAvailable = p.status !== 'PLANNED' && p.status !== 'VISITED';
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCat = selectedCategory === 'Tất cả' || p.category === selectedCategory;
-    return matchesSearch && matchesCat;
+    return isAvailable && matchesSearch && matchesCat;
   });
 
   const plannedSat = places.filter((p) => p.status === 'PLANNED' && p.plannedDate === currentSelectedWeekend.saturday);
@@ -305,7 +348,13 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
             ))}
           </div>
 
-          {filteredPlaces.length === 0 ? (
+          {isPlacesLoading ? (
+            <div className="space-y-3">
+              <PlaceCardSkeleton />
+              <PlaceCardSkeleton />
+              <PlaceCardSkeleton />
+            </div>
+          ) : filteredPlaces.length === 0 ? (
             <div className="text-center py-10 bg-slate-900/50 border border-slate-800/60 rounded-3xl p-6">
               <Sparkles className="w-8 h-8 text-rose-400/50 mx-auto mb-2" />
               <p className="text-xs text-slate-400 font-medium">Chưa tìm thấy địa điểm nào.</p>
@@ -453,6 +502,25 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
             </button>
           </div>
 
+          {/* Quick Action Toolbar for Weekend Plan */}
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => setIsStoryExportOpen(true)}
+              className="flex-1 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 py-2 px-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 active:scale-95 transition-all shadow-sm"
+            >
+              <Share2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Xuất Ảnh Story 📸</span>
+            </button>
+
+            <button
+              onClick={handleSendNudge}
+              className="flex-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 py-2 px-3 rounded-2xl font-bold text-xs flex items-center justify-center space-x-1.5 active:scale-95 transition-all shadow-sm"
+            >
+              <BellRing className="w-3.5 h-3.5 text-purple-400 animate-bounce" />
+              <span>Nhắc Xem Lịch 🔔</span>
+            </button>
+          </div>
+
           {/* Sub-view 1: Current Weekend View */}
           {planMode === 'current' ? (
             <CurrentWeekendView
@@ -579,6 +647,7 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
           {/* Photobooth & Video Memory Vault */}
           <PhotoboothVault
             items={photobooths}
+            isLoading={isPhotoboothsLoading}
             onAddPhotobooth={handleAddPhotobooth}
             onDeletePhotobooth={handleDeletePhotobooth}
           />
@@ -592,6 +661,7 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
         isOpen={isSpinOpen}
         onClose={() => setIsSpinOpen(false)}
         places={places}
+        onAssignDate={handleAssignDate}
       />
 
       <TikTokAddModal
@@ -613,6 +683,26 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
         place={checkinPlace}
         onSaveReview={handleSaveReview}
       />
+
+      <StoryExportModal
+        isOpen={isStoryExportOpen}
+        onClose={() => setIsStoryExportOpen(false)}
+        saturdayPlaces={plannedSat}
+        sundayPlaces={plannedSun}
+        saturdayDisplay={currentSelectedWeekend.saturdayDisplay}
+        sundayDisplay={currentSelectedWeekend.sundayDisplay}
+        weekLabel={currentSelectedWeekend.weekLabel}
+        loveDays={calculateLoveDays()}
+      />
+
+      {/* Realtime Nudge Toast Banner */}
+      {nudgeToast && (
+        <div className="fixed top-5 inset-x-4 z-50 bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 text-white p-3.5 rounded-2xl shadow-2xl border border-white/20 animate-in slide-in-from-top-5 duration-300 flex items-center space-x-3">
+          <Sparkles className="w-5 h-5 text-amber-300 animate-spin shrink-0" />
+          <p className="text-xs font-bold flex-1 leading-snug">{nudgeToast}</p>
+          <button onClick={() => setNudgeToast(null)} className="text-white/80 hover:text-white text-xs font-extrabold px-1.5 py-0.5 rounded-lg bg-black/20">✕</button>
+        </div>
+      )}
 
       {/* Bottom Mobile Navigation */}
       <BottomNav

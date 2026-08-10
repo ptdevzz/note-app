@@ -27,6 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="dark">
+      <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
+      </head>
       <body className="bg-slate-950 text-slate-100 min-h-screen">
         {children}
       </body>

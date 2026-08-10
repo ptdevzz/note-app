@@ -41,6 +41,7 @@ export default function TikTokAddModal({ isOpen, onClose, onAdd }: TikTokAddModa
     guessedCategory: PlaceCategory;
     tags: string[];
   } | null>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Manual tab state
   const [manualTitle, setManualTitle] = useState('');
@@ -50,43 +51,93 @@ export default function TikTokAddModal({ isOpen, onClose, onAdd }: TikTokAddModa
 
   if (!isOpen) return null;
 
-  const handleParse = async () => {
-    if (!tiktokUrl.trim()) return;
+  const extractCleanUrl = (text: string) => {
+    const match = text.match(/(https?:\/\/[^\s]+)/gi);
+    return match ? match[0] : text.trim();
+  };
+
+  const handleParseUrl = async (rawUrl: string) => {
+    const cleanUrl = extractCleanUrl(rawUrl);
+    if (!cleanUrl) return;
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/tiktok-parse?url=${encodeURIComponent(tiktokUrl.trim())}`);
+      const res = await fetch(`/api/tiktok-parse?url=${encodeURIComponent(cleanUrl)}`);
       const data = await res.json();
       
       setPreview({
-        title: data.title,
-        thumbnail: data.thumbnail_url,
-        authorName: data.author_name,
+        title: data.title || 'Địa điểm TikTok hot',
+        thumbnail: data.thumbnail_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+        authorName: data.author_name || 'TikTok User',
         guessedCategory: (data.guessedCategory as PlaceCategory) || 'Ăn tối',
         tags: data.tags || ['Sài Gòn'],
       });
     } catch (err) {
-      console.error(err);
-      setError('Khổng thể lấy tự động thông tin link. Bạn vẫn có thể bấm Lưu bên dưới!');
+      console.warn('Không thể bóc tách TikTok API, dùng thông tin mặc định:', err);
+      // Default fallback if fetch fails
+      setPreview({
+        title: 'Địa điểm TikTok hot',
+        thumbnail: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+        authorName: 'TikTok Creator',
+        guessedCategory: 'Ăn tối',
+        tags: ['Sài Gòn'],
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleInputChange = (val: string) => {
+    const clean = extractCleanUrl(val);
+    setTiktokUrl(clean);
+    setPreview(null);
+
+    if (clean.includes('tiktok') || clean.includes('http')) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        handleParseUrl(clean);
+      }, 400);
+    }
+  };
+
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tiktokUrl) return;
+    const cleanUrl = extractCleanUrl(tiktokUrl);
+    if (!cleanUrl) return;
 
     setLoading(true);
+    setError(null);
+
     try {
+      let finalPreview = preview;
+
+      // Auto-fetch if user hasn't waited for preview
+      if (!finalPreview) {
+        try {
+          const res = await fetch(`/api/tiktok-parse?url=${encodeURIComponent(cleanUrl)}`);
+          const data = await res.json();
+          if (data && data.title) {
+            finalPreview = {
+              title: data.title,
+              thumbnail: data.thumbnail_url,
+              authorName: data.author_name,
+              guessedCategory: (data.guessedCategory as PlaceCategory) || 'Ăn tối',
+              tags: data.tags || ['Sài Gòn'],
+            };
+          }
+        } catch (e) {
+          console.warn('Lỗi tự động bóc tách:', e);
+        }
+      }
+
       await onAdd({
-        tiktokUrl,
-        title: preview?.title || 'Địa điểm / Clip ngắn',
-        thumbnail: preview?.thumbnail || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
-        authorName: preview?.authorName || '@user',
-        category: preview?.guessedCategory || 'Ăn tối',
-        tags: preview?.tags || ['Sài Gòn'],
+        tiktokUrl: cleanUrl,
+        title: finalPreview?.title || 'Địa điểm TikTok hot',
+        thumbnail: finalPreview?.thumbnail || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+        authorName: finalPreview?.authorName || 'TikTok User',
+        category: finalPreview?.guessedCategory || 'Ăn tối',
+        tags: finalPreview?.tags || ['Sài Gòn'],
         createdBy: 'Bé Yêu',
       });
 
@@ -187,12 +238,12 @@ export default function TikTokAddModal({ isOpen, onClose, onAdd }: TikTokAddModa
                   required
                   placeholder="https://vt.tiktok.com/..."
                   value={tiktokUrl}
-                  onChange={(e) => setTiktokUrl(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500"
                 />
                 <button
                   type="button"
-                  onClick={handleParse}
+                  onClick={() => handleParseUrl(tiktokUrl)}
                   disabled={loading || !tiktokUrl}
                   className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-700/60 shrink-0 flex items-center space-x-1"
                 >

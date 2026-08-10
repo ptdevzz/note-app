@@ -90,9 +90,14 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
     <div className="fixed inset-0 bg-slate-950 text-slate-100 z-50 flex items-center justify-center p-4 selection:bg-rose-500">
       <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl text-center space-y-6 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Glow Header */}
-        <div className="w-16 h-16 bg-gradient-to-tr from-rose-500 to-pink-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-rose-500/30">
-          <Lock className="w-8 h-8 text-white" />
+        {/* Couple Photo Glow Header */}
+        <div className="relative w-20 h-20 mx-auto">
+          <div className="absolute inset-0 bg-gradient-to-tr from-rose-500 to-purple-500 rounded-full blur-md opacity-70 animate-pulse" />
+          <img
+            src="/couple.png"
+            alt="Couple Photo"
+            className="relative w-20 h-20 object-cover rounded-full border-2 border-rose-500 shadow-xl shadow-rose-500/40"
+          />
         </div>
 
         <div>

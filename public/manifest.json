@@ -1,30 +1,17 @@
 {
+  "name": "UsWeekends - Sổ Tay Hẹn Hò",
   "short_name": "UsWeekends",
-  "name": "UsWeekends • Đi Đâu Ăn Gì",
+  "description": "Ứng dụng lên lịch hẹn hò cuối tuần & lưu giữ kỷ niệm cho 2 đứa 💕",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#f43f5e",
   "icons": [
     {
-      "src": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=192&h=192&q=80",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=512&h=512&q=80",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
-  ],
-  "start_url": "/",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
-  "display": "standalone",
-  "orientation": "portrait",
-  "share_target": {
-    "action": "/share-target",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  }
+  ]
 }

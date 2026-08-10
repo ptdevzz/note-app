@@ -235,7 +235,7 @@ export default function AdminConfigPage() {
                 onChange={(e) => setPasscodeGf(e.target.value)}
                 className="w-full bg-slate-900 border border-pink-500/50 rounded-xl px-3 py-2.5 text-xs text-pink-300 font-mono font-bold focus:border-pink-400 focus:outline-none"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">VD: 1804 -> Nhập pass này tự nhảy sang Góc nhìn Bé Yêu</span>
+              <span className="text-[10px] text-slate-500 mt-1 block">VD: 1804 &rarr; Nhập pass này tự nhảy sang Góc nhìn Bé Yêu</span>
             </div>
 
             <div>
@@ -251,7 +251,7 @@ export default function AdminConfigPage() {
                 onChange={(e) => setPasscodeBf(e.target.value)}
                 className="w-full bg-slate-900 border border-purple-500/50 rounded-xl px-3 py-2.5 text-xs text-purple-300 font-mono font-bold focus:border-purple-400 focus:outline-none"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">VD: 1008 -> Nhập pass này tự nhảy sang Góc nhìn Anh iu</span>
+              <span className="text-[10px] text-slate-500 mt-1 block">VD: 1008 &rarr; Nhập pass này tự nhảy sang Góc nhìn Anh iu</span>
             </div>
           </div>
 

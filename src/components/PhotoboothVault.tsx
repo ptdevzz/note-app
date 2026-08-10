@@ -3,23 +3,27 @@
 import React, { useState } from 'react';
 import { PhotoboothMemory } from '@/lib/types';
 import { convertFileToBase64 } from '@/lib/imageUtils';
+import { PhotoboothGridSkeleton } from '@/components/SkeletonLoader';
 import { 
-  Camera, Film, Plus, Calendar, MapPin, Trash2, ExternalLink, Video, Upload, Image as ImageIcon, ChevronLeft, ChevronRight, X
+  Camera, Film, Plus, Calendar, MapPin, Trash2, ExternalLink, Video, Upload, Image as ImageIcon, ChevronLeft, ChevronRight, X, Loader2, Sparkles
 } from 'lucide-react';
 
 interface PhotoboothVaultProps {
   items: PhotoboothMemory[];
+  isLoading?: boolean;
   onAddPhotobooth: (item: Omit<PhotoboothMemory, 'id' | 'createdAt'>) => Promise<void>;
   onDeletePhotobooth: (id: string) => Promise<void>;
 }
 
 export default function PhotoboothVault({
   items,
+  isLoading = false,
   onAddPhotobooth,
   onDeletePhotobooth
 }: PhotoboothVaultProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Lightbox Modal State
   const [activeGallery, setActiveGallery] = useState<{ title: string; images: string[]; index: number } | null>(null);
@@ -42,7 +46,7 @@ export default function PhotoboothVault({
     try {
       const base64List: string[] = [];
       for (const file of files) {
-        const base64 = await convertFileToBase64(file, 800, 0.85);
+        const base64 = await convertFileToBase64(file, 500, 0.65);
         base64List.push(base64);
       }
       setUploadedImages(prev => [...prev, ...base64List]);
@@ -59,26 +63,33 @@ export default function PhotoboothVault({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSubmitting) return;
 
-    const coverPhoto = uploadedImages[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80';
+    setIsSubmitting(true);
+    try {
+      const coverPhoto = uploadedImages[0] || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80';
 
-    await onAddPhotobooth({
-      title: title.trim(),
-      date,
-      location: location.trim() || 'Photobooth Studio',
-      frameColor,
-      stripImage: coverPhoto,
-      images: uploadedImages.length > 0 ? uploadedImages : [coverPhoto],
-      videoUrl: videoUrl.trim(),
-      notes: notes.trim() || 'Kỷ niệm chụp Photobooth của 2 đứa 💕',
-    });
+      await onAddPhotobooth({
+        title: title.trim(),
+        date,
+        location: location.trim() || 'Photobooth Studio',
+        frameColor,
+        stripImage: coverPhoto,
+        images: uploadedImages.length > 0 ? uploadedImages : [coverPhoto],
+        videoUrl: videoUrl.trim(),
+        notes: notes.trim() || 'Kỷ niệm chụp Photobooth của 2 đứa 💕',
+      });
 
-    setIsModalOpen(false);
-    setTitle('');
-    setUploadedImages([]);
-    setVideoUrl('');
-    setNotes('');
+      setIsModalOpen(false);
+      setTitle('');
+      setUploadedImages([]);
+      setVideoUrl('');
+      setNotes('');
+    } catch (err) {
+      alert('Có lỗi xảy ra khi lưu album.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getFrameStyle = (color: string) => {
@@ -214,7 +225,12 @@ export default function PhotoboothVault({
       </div>
 
       {/* Grid of Photobooth Strip Cards */}
-      {items.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-4">
+          <PhotoboothGridSkeleton />
+          <PhotoboothGridSkeleton />
+        </div>
+      ) : items.length === 0 ? (
         <div className="text-center py-10 bg-slate-900/50 border border-slate-800 rounded-3xl p-6">
           <Film className="w-8 h-8 text-pink-400/50 mx-auto mb-2" />
           <p className="text-xs text-slate-400 font-medium">Chưa có bộ ảnh Photobooth nào.</p>
@@ -484,10 +500,20 @@ export default function PhotoboothVault({
 
               <button
                 type="submit"
-                disabled={isUploading}
-                className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs py-2.5 rounded-xl shadow-lg shadow-pink-600/30 disabled:opacity-50"
+                disabled={isUploading || isSubmitting || !title.trim()}
+                className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-xs py-3 rounded-2xl shadow-lg shadow-pink-600/30 disabled:opacity-50 flex items-center justify-center space-x-2 transition-all active:scale-95"
               >
-                Lưu Album Photobooth ✨
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-pink-200" />
+                    <span>Đang Lưu Album Photobooth... 🎞️</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Lưu Album Photobooth ✨</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
