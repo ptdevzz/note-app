@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Loader2, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { dataService } from '@/lib/dataService';
 
 interface PasscodeGateProps {
-  children: (role: 'GF' | 'BF') => React.ReactNode;
+  children: (role: 'GF' | 'BF', onLogout: () => void) => React.ReactNode;
 }
 
 export default function PasscodeGate({ children }: PasscodeGateProps) {
@@ -13,17 +14,21 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
   const [activeRole, setActiveRole] = useState<'GF' | 'BF'>('GF');
   const [pinInput, setPinInput] = useState('');
   const [error, setError] = useState(false);
+  const [isPasscodeReady, setIsPasscodeReady] = useState(false);
 
   // Dual Passcodes
   const [gfPasscode, setGfPasscode] = useState('1804'); // Birthday of Girlfriend
   const [bfPasscode, setBfPasscode] = useState('1008'); // Birthday of Boyfriend
 
   useEffect(() => {
+    let gfP = '1804';
+    let bfP = '1008';
+
     if (typeof window !== 'undefined') {
-      const savedGfPass = localStorage.getItem('admin_passcode_gf') || localStorage.getItem('admin_passcode') || '1804';
-      const savedBfPass = localStorage.getItem('admin_passcode_bf') || '1008';
-      setGfPasscode(savedGfPass);
-      setBfPasscode(savedBfPass);
+      gfP = localStorage.getItem('admin_passcode_gf') || localStorage.getItem('admin_passcode') || '1804';
+      bfP = localStorage.getItem('admin_passcode_bf') || '1008';
+      setGfPasscode(gfP);
+      setBfPasscode(bfP);
 
       // Lưu trạng thái đã mở khóa vào localStorage để F5 refresh không bao giờ bị bắt nhập lại!
       const savedUnlockedRole = localStorage.getItem('us_weekends_unlocked_role') as 'GF' | 'BF' | null;
@@ -32,9 +37,38 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
         setIsUnlocked(true);
       }
     }
+
+    // Pre-fetch config from Firebase BEFORE enabling keypad
+    dataService.getConfig().then((config) => {
+      if (config) {
+        if (config.passcodeGf) {
+          gfP = config.passcodeGf;
+          setGfPasscode(config.passcodeGf);
+        }
+        if (config.passcodeBf) {
+          bfP = config.passcodeBf;
+          setBfPasscode(config.passcodeBf);
+        }
+      }
+      setIsPasscodeReady(true);
+    }).catch(() => {
+      setIsPasscodeReady(true);
+    });
+
+    const unsubConfig = dataService.subscribeConfig((config) => {
+      if (config) {
+        if (config.passcodeGf) setGfPasscode(config.passcodeGf);
+        if (config.passcodeBf) setBfPasscode(config.passcodeBf);
+      }
+      setIsPasscodeReady(true);
+    });
+
+    return () => unsubConfig();
   }, []);
 
   const handleKeyClick = (val: string) => {
+    if (!isPasscodeReady) return;
+
     if (pinInput.length < 6) {
       const next = pinInput + val;
       setPinInput(next);
@@ -56,6 +90,8 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isPasscodeReady) return;
+
     if (pinInput === gfPasscode) {
       unlockApp('GF');
     } else if (pinInput === bfPasscode) {
@@ -70,7 +106,6 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
     setActiveRole(role);
     setIsUnlocked(true);
     if (typeof window !== 'undefined') {
-      // Ghi nhớ vĩnh viễn trạng thái đã mở khóa vào LocalStorage
       localStorage.setItem('us_weekends_unlocked_role', role);
     }
 
@@ -82,8 +117,17 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
     });
   };
 
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('us_weekends_unlocked_role');
+    }
+    setIsUnlocked(false);
+    setPinInput('');
+    setError(false);
+  };
+
   if (isUnlocked) {
-    return <>{children(activeRole)}</>;
+    return <>{children(activeRole, handleLogout)}</>;
   }
 
   return (
@@ -101,12 +145,20 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
         </div>
 
         <div>
-          <h1 className="text-lg font-bold text-white flex items-center justify-center space-x-1.5">
+          <h1 className="text-lg font-bold text-white flex items-center justify-center space-x-1.5 mb-1">
             <span>UsWeekends 💕</span>
           </h1>
-          <p className="text-xs text-rose-300 mt-1 font-medium">
-            Nhập ngày sinh của bạn để mở khóa
-          </p>
+          
+          {!isPasscodeReady ? (
+            <div className="inline-flex items-center space-x-1.5 bg-rose-500/15 text-rose-300 text-xs px-3 py-1 rounded-full border border-rose-500/30 font-semibold animate-pulse my-1">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+              <span>Đang kết nối mật khẩu tình yêu...</span>
+            </div>
+          ) : (
+            <p className="text-xs text-rose-300 font-medium">
+              Nhập ngày sinh của bạn để mở khóa
+            </p>
+          )}
         </div>
 
         {/* PIN Dots */}
@@ -131,13 +183,14 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
           )}
 
           {/* Keypad */}
-          <div className="grid grid-cols-3 gap-2.5 max-w-[240px] mx-auto pt-2">
+          <div className={`grid grid-cols-3 gap-2.5 max-w-[240px] mx-auto pt-2 transition-all ${!isPasscodeReady ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
               <button
                 key={num}
                 type="button"
                 onClick={() => handleKeyClick(num)}
-                className="w-16 h-14 bg-slate-950 hover:bg-slate-800 border border-slate-800/80 rounded-2xl text-base font-bold text-slate-100 active:scale-90 transition-all flex items-center justify-center mx-auto shadow-sm"
+                disabled={!isPasscodeReady}
+                className="w-16 h-14 bg-slate-950 hover:bg-slate-800 border border-slate-800/80 rounded-2xl text-base font-bold text-slate-100 active:scale-90 transition-all flex items-center justify-center mx-auto shadow-sm disabled:cursor-not-allowed"
               >
                 {num}
               </button>
@@ -145,20 +198,23 @@ export default function PasscodeGate({ children }: PasscodeGateProps) {
             <button
               type="button"
               onClick={handleDeleteKey}
-              className="w-16 h-14 bg-slate-950/60 hover:bg-slate-800 border border-slate-800/80 rounded-2xl text-xs font-semibold text-slate-400 active:scale-90 transition-all flex items-center justify-center mx-auto"
+              disabled={!isPasscodeReady}
+              className="w-16 h-14 bg-slate-950/60 hover:bg-slate-800 border border-slate-800/80 rounded-2xl text-xs font-semibold text-slate-400 active:scale-90 transition-all flex items-center justify-center mx-auto disabled:cursor-not-allowed"
             >
               Xóa
             </button>
             <button
               type="button"
               onClick={() => handleKeyClick('0')}
-              className="w-16 h-14 bg-slate-950 hover:bg-slate-800 border border-slate-800/80 rounded-2xl text-base font-bold text-slate-100 active:scale-90 transition-all flex items-center justify-center mx-auto shadow-sm"
+              disabled={!isPasscodeReady}
+              className="w-16 h-14 bg-slate-950 hover:bg-slate-800 border border-slate-800/80 rounded-2xl text-base font-bold text-slate-100 active:scale-90 transition-all flex items-center justify-center mx-auto shadow-sm disabled:cursor-not-allowed"
             >
               0
             </button>
             <button
               type="submit"
-              className="w-16 h-14 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl text-xs font-bold active:scale-90 transition-all flex items-center justify-center mx-auto shadow-md shadow-rose-500/25"
+              disabled={!isPasscodeReady}
+              className="w-16 h-14 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl text-xs font-bold active:scale-90 transition-all flex items-center justify-center mx-auto shadow-md shadow-rose-500/25 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Mở 🔓
             </button>

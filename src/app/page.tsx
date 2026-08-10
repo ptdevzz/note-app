@@ -24,10 +24,10 @@ import { getWeekendForWeekOffset, calculateLoveDays } from '@/lib/dateUtils';
 import confetti from 'canvas-confetti';
 import { 
   Plus, Search, Sparkles, MapPin, ExternalLink, Calendar as CalendarIcon, CheckCircle2, 
-  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2
+  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2, LogOut
 } from 'lucide-react';
 
-function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
+function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [places, setPlaces] = useState<PlaceItem[]>([]);
   const [coupons, setCoupons] = useState<LoveCoupon[]>([]);
@@ -157,6 +157,7 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
   };
 
   const handleSaveNote = async (newNote: string) => {
+    setLoveNote(newNote);
     await dataService.updateLoveNote(newNote);
   };
 
@@ -204,6 +205,32 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
 
   return (
     <MobileContainer>
+      {/* Top App Header with Logout & Role Badge */}
+      <div className="px-3 pt-3 pb-1 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="relative w-8 h-8">
+            <img src="/couple.png" alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-rose-500 shadow-sm" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-1">
+              <h1 className="text-xs font-bold text-white">UsWeekends</h1>
+              <span className="text-[9px] bg-rose-500/20 text-rose-300 font-extrabold px-1.5 py-0.2 rounded-full border border-rose-500/30">
+                {currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={onLogout}
+          className="bg-slate-900 hover:bg-slate-800 border border-slate-800/80 text-slate-400 hover:text-rose-400 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center space-x-1 active:scale-95 transition-all shadow-sm"
+          title="Khóa ứng dụng / Đăng xuất"
+        >
+          <LogOut className="w-3 h-3" />
+          <span>Khóa App 🔒</span>
+        </button>
+      </div>
+
       {/* Auto Detect Clipboard Banner */}
       <div className="px-1 pt-1">
         <ClipboardAutoDetectBanner onAddPlace={handleAddPlace} />
@@ -718,7 +745,9 @@ function MainAppContent({ defaultRole }: { defaultRole: 'GF' | 'BF' }) {
 export default function HomePage() {
   return (
     <PasscodeGate>
-      {(unlockedRole) => <MainAppContent defaultRole={unlockedRole} />}
+      {(unlockedRole, onLogout) => (
+        <MainAppContent defaultRole={unlockedRole} onLogout={onLogout} />
+      )}
     </PasscodeGate>
   );
 }

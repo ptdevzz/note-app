@@ -635,6 +635,20 @@ export const dataService = {
     return () => {};
   },
 
+  async getConfig(): Promise<any> {
+    if (isFirebaseConfigured && db) {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'config'));
+        if (snap.exists()) {
+          return snap.data();
+        }
+      } catch (err) {
+        console.warn('Lỗi Firestore getConfig:', err);
+      }
+    }
+    return null;
+  },
+
   async updateConfig(config: any): Promise<void> {
     if (typeof window !== 'undefined') {
       if (config.partner1Name) localStorage.setItem('admin_partner1', config.partner1Name);
