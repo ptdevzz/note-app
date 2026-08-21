@@ -77,9 +77,14 @@ export function calculateLoveDays(startDateStr: string = '2026-04-18'): number {
  * Format thời gian chuẩn định dạng DD/MM/YYYY HH:MM
  */
 export function formatDateTime(dateInput?: Date | string | number): string {
-  const d = dateInput ? new Date(dateInput) : new Date();
+  if (!dateInput) return '';
+  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
+
+  const d = new Date(dateInput);
   if (isNaN(d.getTime())) {
-    return new Date().toLocaleDateString('vi-VN');
+    return String(dateInput);
   }
 
   const day = String(d.getDate()).padStart(2, '0');
@@ -89,4 +94,13 @@ export function formatDateTime(dateInput?: Date | string | number): string {
   const minutes = String(d.getMinutes()).padStart(2, '0');
 
   return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+/**
+ * Tự động chuẩn hóa tiền VNĐ (xử lý cả dữ liệu nhập 180 (nghìn) lẫn 180000)
+ */
+export function formatVndCurrency(amount?: number): string {
+  if (!amount || amount <= 0) return '0 VNĐ';
+  const realAmount = amount < 10000 ? amount * 1000 : amount;
+  return `${realAmount.toLocaleString('vi-VN')} VNĐ`;
 }

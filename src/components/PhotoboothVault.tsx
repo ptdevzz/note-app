@@ -368,7 +368,13 @@ export default function PhotoboothVault({
                 <Camera className="w-5 h-5 text-pink-400" />
                 <h3 className="text-sm font-bold text-white">Thêm Album Photobooth Nổi Tải 📸</h3>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
+              <button 
+                onClick={() => !isSubmitting && setIsModalOpen(false)} 
+                disabled={isSubmitting}
+                className="text-slate-400 hover:text-white text-xs font-bold disabled:opacity-30"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
@@ -526,7 +532,7 @@ export default function PhotoboothVault({
                 ) : isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-pink-200" />
-                    <span>Đang Lưu Album Photobooth... 🎞️</span>
+                    <span>Đang Đẩy Lên Firebase... Vui Lòng Đợi 🎞️</span>
                   </>
                 ) : (
                   <>

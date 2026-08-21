@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { PlaceItem } from '@/lib/types';
+import { formatVndCurrency } from '@/lib/dateUtils';
 import { convertFileToBase64 } from '@/lib/imageUtils';
 import { X, Star, Camera, Check, Upload, Image as ImageIcon } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -141,11 +142,17 @@ export default function CheckinModal({ isOpen, onClose, place, onSaveReview }: C
             />
           </div>
 
-          {/* Cost Estimate */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Tổng chi phí 2 đứa (VNĐ)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-300">
+                Tổng chi phí 2 đứa (VNĐ)
+              </label>
+              {Number(cost) > 0 && (
+                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  {formatVndCurrency(Number(cost))}
+                </span>
+              )}
+            </div>
             <input
               type="number"
               step="50000"

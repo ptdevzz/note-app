@@ -152,7 +152,9 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       createdAt: timeStr
     };
     await dataService.addPlace(fullItem);
-    triggerLocalNotification('💕 UsWeekends', `${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa thêm địa điểm mới: ${newItem.title} ☕ (lúc ${timeStr})`);
+    const msg = `📍 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa thêm địa điểm mới: ${newItem.title} ☕ (lúc ${timeStr})`;
+    triggerLocalNotification('💕 UsWeekends', msg);
+    await dataService.sendNudge(currentRole, msg);
   };
 
   const handleAssignDate = async (placeId: string, dateStr: string | null) => {
@@ -176,6 +178,10 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       costEstimate,
       photoUrl,
     });
+    const timeStr = formatDateTime();
+    const msg = `🎉 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa check-in hoàn thành 1 địa điểm! (lúc ${timeStr})`;
+    triggerLocalNotification('🎉 Check-in Thành Công', msg);
+    await dataService.sendNudge(currentRole, msg);
   };
 
   const handleDeletePlace = async (id: string) => {
@@ -207,7 +213,9 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       createdAt: timeStr
     };
     await dataService.addPhotobooth(fullItem as any);
-    triggerLocalNotification('💕 UsWeekends', `${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa tải lên Kỷ Niệm Photobooth mới 📸 (lúc ${timeStr})`);
+    const msg = `📸 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa tải lên Kỷ Niệm Photobooth mới 📸 (lúc ${timeStr})`;
+    triggerLocalNotification('💕 UsWeekends', msg);
+    await dataService.sendNudge(currentRole, msg);
   };
 
   const handleDeletePhotobooth = async (id: string) => {
@@ -482,7 +490,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
                         <span className="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                           {place.category}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-medium">Bởi {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${place.createdAt}` : ''}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">Bởi {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${formatDateTime(place.createdAt)}` : ''}</span>
                       </div>
 
                       <h3 className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug">

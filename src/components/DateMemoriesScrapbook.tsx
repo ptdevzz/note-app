@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { PlaceItem } from '@/lib/types';
+import { formatVndCurrency } from '@/lib/dateUtils';
 import { Camera, Star, MapPin, ExternalLink, Heart } from 'lucide-react';
 
 interface DateMemoriesScrapbookProps {
@@ -9,7 +10,11 @@ interface DateMemoriesScrapbookProps {
 }
 
 export default function DateMemoriesScrapbook({ visitedPlaces }: DateMemoriesScrapbookProps) {
-  const totalCost = visitedPlaces.reduce((sum, p) => sum + (p.costEstimate || 0), 0);
+  const totalCost = visitedPlaces.reduce((sum, p) => {
+    const cost = p.costEstimate || 0;
+    const realCost = cost > 0 && cost < 10000 ? cost * 1000 : cost;
+    return sum + realCost;
+  }, 0);
 
   return (
     <div className="space-y-4">
@@ -33,7 +38,7 @@ export default function DateMemoriesScrapbook({ visitedPlaces }: DateMemoriesScr
         <div>
           <span className="text-xs text-slate-400">Tổng chi phí</span>
           <div className="text-lg font-bold text-amber-300">
-            {totalCost > 0 ? `${(totalCost / 1000).toLocaleString('vi-VN')}k` : '0k'}
+            {formatVndCurrency(totalCost)}
           </div>
         </div>
       </div>
@@ -81,8 +86,8 @@ export default function DateMemoriesScrapbook({ visitedPlaces }: DateMemoriesScr
                       <span>{place.tags.join(', ')}</span>
                     </span>
                     {place.costEstimate ? (
-                      <span className="text-amber-300 font-medium">
-                        • {place.costEstimate / 1000}k
+                      <span className="text-amber-300 font-bold">
+                        • {formatVndCurrency(place.costEstimate)}
                       </span>
                     ) : null}
                   </div>
