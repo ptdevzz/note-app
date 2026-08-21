@@ -420,18 +420,33 @@ export default function PhotoboothVault({
                     multiple
                     accept="image/*"
                     onChange={handleMultipleFilesUpload}
+                    disabled={isUploading}
                     className="hidden"
                   />
-                  <ImageIcon className="w-6 h-6 text-pink-400 mb-1" />
-                  <span className="text-xs font-bold text-pink-200">
-                    {isUploading ? 'Đang nén nhiều ảnh...' : '📱 Bấm để chọn nhiều ảnh từ Album'}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">Chọn cùng lúc nhiều dải ảnh / ảnh đơn</span>
+                  {isUploading ? (
+                    <div className="flex items-center space-x-2 py-1">
+                      <Loader2 className="w-5 h-5 text-pink-400 animate-spin" />
+                      <span className="text-xs font-bold text-amber-300 animate-pulse">
+                        Đang đọc & nén ảnh local... Vui lòng đợi!
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className="w-6 h-6 text-pink-400 mb-1" />
+                      <span className="text-xs font-bold text-pink-200">
+                        📱 Bấm để chọn nhiều ảnh từ Album (Không giới hạn)
+                      </span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">Chọn cùng lúc nhiều dải ảnh / ảnh đơn</span>
+                    </>
+                  )}
                 </label>
 
                 {uploadedImages.length > 0 && (
                   <div className="mt-2 space-y-1">
-                    <span className="text-[10px] text-pink-300 font-bold">Đã chọn {uploadedImages.length} ảnh:</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-pink-300 font-bold">Đã nạp thành công {uploadedImages.length} ảnh:</span>
+                      {isUploading && <span className="text-[9px] text-amber-400 font-bold animate-pulse">⏳ Đang xử lý thêm...</span>}
+                    </div>
                     <div className="grid grid-cols-4 gap-1.5 max-h-36 overflow-y-auto p-1 bg-slate-950 rounded-xl border border-slate-800">
                       {uploadedImages.map((img, idx) => (
                         <div key={idx} className="relative w-full h-16 rounded-lg overflow-hidden border border-slate-800 group">
@@ -503,7 +518,12 @@ export default function PhotoboothVault({
                 disabled={isUploading || isSubmitting || !title.trim()}
                 className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-xs py-3 rounded-2xl shadow-lg shadow-pink-600/30 disabled:opacity-50 flex items-center justify-center space-x-2 transition-all active:scale-95"
               >
-                {isSubmitting ? (
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
+                    <span>Đang Xử Lý Nén Ảnh... Vui Lòng Đợi ⏳</span>
+                  </>
+                ) : isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-pink-200" />
                     <span>Đang Lưu Album Photobooth... 🎞️</span>

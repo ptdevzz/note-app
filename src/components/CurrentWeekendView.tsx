@@ -106,7 +106,7 @@ export default function CurrentWeekendView({
                       <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                         #{idx + 1} • {place.category}
                       </span>
-                      <span className="text-[10px] text-slate-500">Bởi {place.createdBy}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Bởi {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${place.createdAt}` : ''}</span>
                     </div>
                     <h4 className="text-xs font-bold text-slate-100 line-clamp-2">{place.title}</h4>
                   </div>

@@ -18,13 +18,14 @@ import WeekendCountdownWidget from '@/components/WeekendCountdownWidget';
 import ClipboardAutoDetectBanner from '@/components/ClipboardAutoDetectBanner';
 import StoryExportModal from '@/components/StoryExportModal';
 import { PlaceCardSkeleton, HomeHeaderSkeleton, PhotoboothGridSkeleton } from '@/components/SkeletonLoader';
+import { requestNotificationPermission, getNotificationPermissionStatus, triggerLocalNotification, registerServiceWorker } from '@/lib/notificationService';
 import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory } from '@/lib/types';
 import { dataService } from '@/lib/dataService';
-import { getWeekendForWeekOffset, calculateLoveDays } from '@/lib/dateUtils';
+import { getWeekendForWeekOffset, calculateLoveDays, formatDateTime } from '@/lib/dateUtils';
 import confetti from 'canvas-confetti';
 import { 
   Plus, Search, Sparkles, MapPin, ExternalLink, Calendar as CalendarIcon, CheckCircle2, 
-  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2, LogOut
+  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2, LogOut, Bell
 } from 'lucide-react';
 
 function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; onLogout: () => void }) {
@@ -41,22 +42,22 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   const [isMoodLoading, setIsMoodLoading] = useState(true);
   const [isStoryExportOpen, setIsStoryExportOpen] = useState(false);
   const [nudgeToast, setNudgeToast] = useState<string | null>(null);
+  const [notificationStatus, setNotificationStatus] = useState<NotificationPermission>('default');
 
   // User Perspective Role: 'GF' (Bé Yêu) vs 'BF' (Anh iu) - Determined automatically by Passcode!
   const [currentRole, setCurrentRole] = useState<'GF' | 'BF'>(defaultRole);
 
   useEffect(() => {
     setCurrentRole(defaultRole);
+    registerServiceWorker();
+    setNotificationStatus(getNotificationPermissionStatus());
   }, [defaultRole]);
 
   // Week navigation state
   const [selectedWeekOffset, setSelectedWeekOffset] = useState<number>(0);
   const currentSelectedWeekend = getWeekendForWeekOffset(selectedWeekOffset);
 
-  // Mode in Plan Tab: 'current' (Tuần này gần nhất) vs 'calendar' (Tất cả các tuần)
-  const [planMode, setPlanMode] = useState<'current' | 'calendar'>('current');
-
-  // UI Modals
+  // Modal States
   const [isSpinOpen, setIsSpinOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [datePickerPlace, setDatePickerPlace] = useState<PlaceItem | null>(null);
@@ -67,30 +68,35 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
 
   // Real-time Data Subscriptions (Firebase Firestore + LocalStorage fallback)
   useEffect(() => {
-    const unsubPlaces = dataService.subscribePlaces((p) => {
-      setPlaces(p);
+    const unsubPlaces = dataService.subscribePlaces((items) => {
+      setPlaces(items);
       setIsPlacesLoading(false);
     });
-    const unsubCoupons = dataService.subscribeCoupons((c) => {
-      setCoupons(c);
+
+    const unsubCoupons = dataService.subscribeCoupons((items) => {
+      setCoupons(items);
       setIsCouponsLoading(false);
     });
-    const unsubPhotobooths = dataService.subscribePhotobooths((pb) => {
-      setPhotobooths(pb);
+
+    const unsubPhotobooths = dataService.subscribePhotobooths((items) => {
+      setPhotobooths(items);
       setIsPhotoboothsLoading(false);
     });
-    const unsubLoveNote = dataService.subscribeLoveNote((n) => {
-      setLoveNote(n);
+
+    const unsubLoveNote = dataService.subscribeLoveNote((note) => {
+      setLoveNote(note);
       setIsNoteLoading(false);
     });
-    const unsubMood = dataService.subscribeMood((m) => {
-      setMood(m);
+
+    const unsubMood = dataService.subscribeMood((mood) => {
+      setMood(mood);
       setIsMoodLoading(false);
     });
 
     const unsubNudge = dataService.subscribeNudge((nudge) => {
       if (nudge && nudge.from !== currentRole && Date.now() - nudge.timestamp < 15000) {
         setNudgeToast(nudge.message);
+        triggerLocalNotification('💕 UsWeekends Notification', nudge.message);
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
         setTimeout(() => setNudgeToast(null), 8000);
       }
@@ -107,10 +113,22 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   }, [currentRole]);
 
   // Handlers
+  const handleEnableNotification = async () => {
+    const perm = await requestNotificationPermission();
+    setNotificationStatus(perm);
+    if (perm === 'granted') {
+      triggerLocalNotification('💕 UsWeekends Notification', 'Đã bật thông báo PWA thành công trên iPhone của bạn!');
+      alert('🎉 Đã bật thông báo PWA thành công! Mọi cập nhật từ người ấy sẽ nảy thông báo trên iPhone của bạn.');
+    } else {
+      alert('Quyền thông báo chưa được cấp. Bạn có thể kiểm tra Cài đặt của iPhone!');
+    }
+  };
+
   const handleSendNudge = async () => {
+    const timeStr = formatDateTime();
     const message = currentRole === 'GF'
-      ? '💕 Bé Yêu vừa chọc anh: "Xem lịch hẹn cuối tuần này nha anh ơi!" 🤏'
-      : '💕 Anh Iu vừa chọc em: "Cuối tuần này có hẹn với anh nha bé ơi!" 🤏';
+      ? `💕 Bé Yêu vừa chọc anh: "Xem lịch hẹn cuối tuần này nha anh ơi!" 🤏 (lúc ${timeStr})`
+      : `💕 Anh Iu vừa chọc em: "Cuối tuần này có hẹn với anh nha bé ơi!" 🤏 (lúc ${timeStr})`;
     await dataService.sendNudge(currentRole, message);
     fetch('/api/send-email', {
       method: 'POST',
@@ -126,7 +144,14 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   };
 
   const handleAddPlace = async (newItem: any) => {
-    await dataService.addPlace(newItem);
+    const timeStr = formatDateTime();
+    const fullItem = {
+      ...newItem,
+      createdBy: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙',
+      createdAt: timeStr
+    };
+    await dataService.addPlace(fullItem);
+    triggerLocalNotification('💕 UsWeekends', `${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa thêm địa điểm mới: ${newItem.title} ☕ (lúc ${timeStr})`);
   };
 
   const handleAssignDate = async (placeId: string, dateStr: string | null) => {
@@ -159,6 +184,14 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   const handleSaveNote = async (newNote: string) => {
     setLoveNote(newNote);
     await dataService.updateLoveNote(newNote);
+    const timeStr = formatDateTime();
+    const notificationMsg = `💌 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa nhắn: "${newNote}" (lúc ${timeStr})`;
+
+    // Push Notification sang PWA iPhone/Android
+    triggerLocalNotification('💌 Ghi Chú Tình Yêu Mới', notificationMsg);
+
+    // Đồng bộ Realtime Nudge sang màn hình máy đối phương ngay lập tức!
+    await dataService.sendNudge(currentRole, notificationMsg);
   };
 
   const handleUseCoupon = async (id: string) => {
@@ -166,7 +199,14 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   };
 
   const handleAddPhotobooth = async (item: Omit<PhotoboothMemory, 'id' | 'createdAt'>) => {
-    await dataService.addPhotobooth(item);
+    const timeStr = formatDateTime();
+    const fullItem = {
+      ...item,
+      createdBy: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙',
+      createdAt: timeStr
+    };
+    await dataService.addPhotobooth(fullItem as any);
+    triggerLocalNotification('💕 UsWeekends', `${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa tải lên Kỷ Niệm Photobooth mới 📸 (lúc ${timeStr})`);
   };
 
   const handleDeletePhotobooth = async (id: string) => {
@@ -174,11 +214,12 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   };
 
   const handleMoodSelect = async (emoji: string, label: string) => {
+    const timeStr = formatDateTime();
     const newMood = {
       emoji,
       label,
-      updatedAt: 'Vừa xong',
-      by: currentRole === 'GF' ? 'Bé Yêu' : 'Anh iu'
+      updatedAt: timeStr,
+      by: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'
     };
     await dataService.updateMood(newMood);
   };
@@ -202,6 +243,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   const plannedSat = places.filter((p) => p.status === 'PLANNED' && p.plannedDate === currentSelectedWeekend.saturday);
   const plannedSun = places.filter((p) => p.status === 'PLANNED' && p.plannedDate === currentSelectedWeekend.sunday);
   const visitedPlaces = places.filter((p) => p.status === 'VISITED');
+
+  const isHomeLoading = isPlacesLoading || isNoteLoading || isMoodLoading;
 
   return (
     <MobileContainer>
@@ -231,6 +274,27 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
         </button>
       </div>
 
+      {/* PWA Notification Permission Banner */}
+      {notificationStatus !== 'granted' && (
+        <div className="mx-1 my-2 p-3 bg-gradient-to-r from-pink-950/80 via-rose-950/80 to-purple-950/80 border border-rose-500/30 rounded-2xl flex items-center justify-between shadow-lg">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-rose-500/20 rounded-xl text-rose-400">
+              <Bell className="w-4 h-4 animate-bounce" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-100">Thông báo PWA iPhone 🔔</div>
+              <p className="text-[10px] text-rose-200/80">Nhận thông báo tức thì khi người ấy thêm quán mới!</p>
+            </div>
+          </div>
+          <button
+            onClick={handleEnableNotification}
+            className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-md active:scale-95 transition-all shrink-0"
+          >
+            Bật Ngay ✨
+          </button>
+        </div>
+      )}
+
       {/* Auto Detect Clipboard Banner */}
       <div className="px-1 pt-1">
         <ClipboardAutoDetectBanner onAddPlace={handleAddPlace} />
@@ -238,7 +302,12 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
 
       {/* --- TAB 1: HOME --- */}
       {activeTab === 'home' && (
-        <div className="space-y-4 pb-4 animate-in fade-in duration-200">
+        isHomeLoading ? (
+          <div className="py-2">
+            <HomeHeaderSkeleton />
+          </div>
+        ) : (
+          <div className="space-y-4 pb-4 animate-in fade-in duration-200">
           {/* Interactive Love Widget */}
           <PokeLoveEffect
             currentRole={currentRole}
@@ -329,7 +398,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
             </button>
           </div>
         </div>
-      )}
+      )
+    )}
 
       {/* --- TAB 2: TIKTOK FEED / COLLECTION --- */}
       {activeTab === 'tiktok' && (
@@ -411,7 +481,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
                         <span className="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                           {place.category}
                         </span>
-                        <span className="text-[10px] text-slate-500">Bởi {place.createdBy}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">Bởi {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${place.createdAt}` : ''}</span>
                       </div>
 
                       <h3 className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug">

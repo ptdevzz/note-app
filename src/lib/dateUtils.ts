@@ -72,3 +72,21 @@ export function calculateLoveDays(startDateStr: string = '2026-04-18'): number {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   return Math.max(diffDays, 1);
 }
+
+/**
+ * Format thời gian chuẩn định dạng DD/MM/YYYY HH:MM
+ */
+export function formatDateTime(dateInput?: Date | string | number): string {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  if (isNaN(d.getTime())) {
+    return new Date().toLocaleDateString('vi-VN');
+  }
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
