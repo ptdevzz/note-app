@@ -55,6 +55,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
 
   // Week navigation state
   const [selectedWeekOffset, setSelectedWeekOffset] = useState<number>(0);
+  const [planMode, setPlanMode] = useState<'current' | 'calendar'>('current');
   const currentSelectedWeekend = getWeekendForWeekOffset(selectedWeekOffset);
 
   // Modal States
