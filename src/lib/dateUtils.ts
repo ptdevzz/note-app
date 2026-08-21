@@ -77,14 +77,14 @@ export function calculateLoveDays(startDateStr: string = '2026-04-18'): number {
  * Format thời gian chuẩn định dạng DD/MM/YYYY HH:MM
  */
 export function formatDateTime(dateInput?: Date | string | number): string {
-  if (!dateInput) return '';
-  if (typeof dateInput === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(dateInput)) {
-    return dateInput;
+  const input = dateInput ?? new Date();
+  if (typeof input === 'string' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(input)) {
+    return input;
   }
 
-  const d = new Date(dateInput);
+  const d = new Date(input);
   if (isNaN(d.getTime())) {
-    return String(dateInput);
+    return String(input);
   }
 
   const day = String(d.getDate()).padStart(2, '0');

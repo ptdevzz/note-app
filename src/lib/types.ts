@@ -19,6 +19,7 @@ export interface PlaceItem {
   photoUrl?: string; // Memories photo
   createdBy: string;
   createdAt: string;
+  visitedAt?: string; // DD/MM/YYYY HH:MM - ngày đi thực tế
 }
 
 export interface PhotoboothMemory {

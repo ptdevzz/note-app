@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { PlaceItem } from '@/lib/types';
-import { formatVndCurrency } from '@/lib/dateUtils';
+import { formatVndCurrency, formatDateTime } from '@/lib/dateUtils';
 import { Camera, Star, MapPin, ExternalLink, Heart } from 'lucide-react';
 
 interface DateMemoriesScrapbookProps {
@@ -80,7 +80,13 @@ export default function DateMemoriesScrapbook({ visitedPlaces }: DateMemoriesScr
 
                   <h3 className="text-xs font-bold text-slate-100 line-clamp-2 mt-1">{place.title}</h3>
 
-                  <div className="flex items-center space-x-2 mt-1 text-[10px] text-slate-400">
+                  {(place.visitedAt || place.createdAt) && (
+                    <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                      📅 Đi ngày {formatDateTime(place.visitedAt || place.createdAt)}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[10px] text-slate-400">
                     <span className="flex items-center space-x-0.5">
                       <MapPin className="w-2.5 h-2.5 text-rose-400" />
                       <span>{place.tags.join(', ')}</span>

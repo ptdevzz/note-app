@@ -96,8 +96,10 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
 
     const unsubNudge = dataService.subscribeNudge((nudge) => {
       if (nudge && nudge.from !== currentRole && Date.now() - nudge.timestamp < 15000) {
-        setNudgeToast(nudge.message);
-        triggerLocalNotification('💕 UsWeekends Notification', nudge.message);
+        const timeLabel = formatDateTime(nudge.timestamp);
+        const toastMsg = `${nudge.message} • ${timeLabel}`;
+        setNudgeToast(toastMsg);
+        triggerLocalNotification('💕 UsWeekends', nudge.message);
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
         setTimeout(() => setNudgeToast(null), 8000);
       }
@@ -126,10 +128,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   };
 
   const handleSendNudge = async () => {
-    const timeStr = formatDateTime();
-    const message = currentRole === 'GF'
-      ? `💕 Bé Yêu vừa chọc anh: "Xem lịch hẹn cuối tuần này nha anh ơi!" 🤏 (lúc ${timeStr})`
-      : `💕 Anh Iu vừa chọc em: "Cuối tuần này có hẹn với anh nha bé ơi!" 🤏 (lúc ${timeStr})`;
+    const name = currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu';
+    const message = `🤏 ${name} chọc: "Xem lịch hẹn cuối tuần nha!" 💕`;
     await dataService.sendNudge(currentRole, message);
     fetch('/api/send-email', {
       method: 'POST',
@@ -137,11 +137,11 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       body: JSON.stringify({
         to: 'banguai@gmail.com',
         subject: '💕 Lịch Hẹn Cuối Tuần Từ Người Ấy',
-        sender: currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'
+        sender: name
       })
     }).catch(() => {});
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
-    alert('Đã gửi thông báo nhắc hẹn sang máy người ấy! 🔔💕');
+    alert('Đã gửi nhắc hẹn! 🔔💕');
   };
 
   const handleAddPlace = async (newItem: any) => {
@@ -152,9 +152,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       createdAt: timeStr
     };
     await dataService.addPlace(fullItem);
-    const msg = `📍 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa thêm địa điểm mới: ${newItem.title} ☕ (lúc ${timeStr})`;
-    triggerLocalNotification('💕 UsWeekends', msg);
-    await dataService.sendNudge(currentRole, msg);
+    const name = currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu';
+    await dataService.sendNudge(currentRole, `📍 ${name} thêm: ${newItem.title}`);
   };
 
   const handleAssignDate = async (placeId: string, dateStr: string | null) => {
@@ -177,11 +176,10 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       notes,
       costEstimate,
       photoUrl,
+      visitedAt: formatDateTime(),
     });
-    const timeStr = formatDateTime();
-    const msg = `🎉 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa check-in hoàn thành 1 địa điểm! (lúc ${timeStr})`;
-    triggerLocalNotification('🎉 Check-in Thành Công', msg);
-    await dataService.sendNudge(currentRole, msg);
+    const name = currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu';
+    await dataService.sendNudge(currentRole, `🎉 ${name} vừa check-in xong!`);
   };
 
   const handleDeletePlace = async (id: string) => {
@@ -191,14 +189,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   const handleSaveNote = async (newNote: string) => {
     setLoveNote(newNote);
     await dataService.updateLoveNote(newNote);
-    const timeStr = formatDateTime();
-    const notificationMsg = `💌 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa nhắn: "${newNote}" (lúc ${timeStr})`;
-
-    // Push Notification sang PWA iPhone/Android
-    triggerLocalNotification('💌 Ghi Chú Tình Yêu Mới', notificationMsg);
-
-    // Đồng bộ Realtime Nudge sang màn hình máy đối phương ngay lập tức!
-    await dataService.sendNudge(currentRole, notificationMsg);
+    const name = currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu';
+    await dataService.sendNudge(currentRole, `💌 ${name} nhắn: "${newNote}"`);
   };
 
   const handleUseCoupon = async (id: string) => {
@@ -213,9 +205,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       createdAt: timeStr
     };
     await dataService.addPhotobooth(fullItem as any);
-    const msg = `📸 ${currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'} vừa tải lên Kỷ Niệm Photobooth mới 📸 (lúc ${timeStr})`;
-    triggerLocalNotification('💕 UsWeekends', msg);
-    await dataService.sendNudge(currentRole, msg);
+    const name = currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu';
+    await dataService.sendNudge(currentRole, `📸 ${name} thêm album Photobooth mới!`);
   };
 
   const handleDeletePhotobooth = async (id: string) => {
@@ -231,6 +222,8 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       by: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'
     };
     await dataService.updateMood(newMood);
+    const name = currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu';
+    await dataService.sendNudge(currentRole, `${emoji} ${name} đổi mood: ${label}`);
   };
 
   // Google Maps Helper
@@ -486,16 +479,21 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
                     />
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="mb-1">
                         <span className="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                           {place.category}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-medium">Bởi {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${formatDateTime(place.createdAt)}` : ''}</span>
                       </div>
 
                       <h3 className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug">
                         {place.title}
                       </h3>
+
+                      {(place.createdBy || place.createdAt) && (
+                        <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                          {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${formatDateTime(place.createdAt)}` : ''}
+                        </p>
+                      )}
 
                       <div className="flex items-center space-x-2 mt-2">
                         {place.tags.map((tag) => (

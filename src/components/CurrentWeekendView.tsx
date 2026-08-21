@@ -102,13 +102,17 @@ export default function CurrentWeekendView({
                     className="w-16 h-16 object-cover rounded-xl border border-slate-800 shrink-0"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="mb-1">
                       <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                         #{idx + 1} • {place.category}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-medium">Bởi {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${formatDateTime(place.createdAt)}` : ''}</span>
                     </div>
                     <h4 className="text-xs font-bold text-slate-100 line-clamp-2">{place.title}</h4>
+                    {(place.createdBy || place.createdAt) && (
+                      <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                        {place.createdBy || 'Bé Yêu'} {place.createdAt ? `• ${formatDateTime(place.createdAt)}` : ''}
+                      </p>
+                    )}
                   </div>
                 </div>
 
