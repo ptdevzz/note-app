@@ -89,13 +89,30 @@ export const dataService = {
   // --- REALTIME SUBSCRIBERS ---
 
   subscribePlaces(callback: (places: PlaceItem[]) => void): () => void {
+    let hasHydrated = false;
+
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_PLACES);
-        if (local) callback(JSON.parse(local));
+        if (local) {
+          callback(JSON.parse(local));
+          hasHydrated = true;
+        }
       } catch (e) {
         console.warn('Lỗi đọc local places:', e);
       }
+    }
+
+    // Nếu điện thoại chưa có cache -> Fetch HTTP tức thì trong 0.2s để không bị treo giao diện
+    if (!hasHydrated) {
+      this.getPlaces().then(items => {
+        if (items && items.length > 0) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY_PLACES, JSON.stringify(items));
+          }
+          callback(items);
+        }
+      });
     }
 
     if (isFirebaseConfigured && db) {
@@ -116,7 +133,6 @@ export const dataService = {
       }
     }
 
-    this.getPlaces().then(callback);
     return () => {};
   },
 
