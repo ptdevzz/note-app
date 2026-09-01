@@ -134,7 +134,7 @@ export default function WeekendCountdownWidget({ places = [], partnerEmail }: We
                   <span>ĐÃ ĐẾN CUỐI TUẦN RỒI! 🎉</span>
                 </div>
                 <p className="text-[11px] text-slate-200 mt-0.5 font-medium">
-                  Lên đồ đi chơi cùng Anh iu thôi nha! 💕
+                  Chuẩn bị đi chơi cuối tuần thôi nha! 🎉
                 </p>
               </div>
             </div>

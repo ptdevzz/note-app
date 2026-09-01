@@ -238,7 +238,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
               <span className="text-slate-400 text-xs font-medium">{timetable.semester}</span>
             </div>
             <h2 className="text-lg font-extrabold text-white flex items-center gap-1.5 tracking-tight">
-              Thời Khóa Biểu <Heart className="w-4 h-4 fill-rose-500 text-rose-500 inline" />
+              Thời Khóa Biểu
             </h2>
           </div>
           <div className="flex items-center gap-1.5">
@@ -253,7 +253,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
 
         {/* NÚT CHỌN NHÓM THỰC HÀNH GỌN NHẸ */}
         <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">Nhóm thực hành của bé:</span>
+          <span className="text-xs font-medium text-slate-400">Nhóm thực hành:</span>
           <div className="bg-slate-950/80 p-0.5 rounded-xl border border-slate-800 flex gap-1">
             {(['N1', 'N2'] as const).map(g => (
               <button
@@ -494,16 +494,15 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
 
       {/* VIEW: TODAY */}
       {viewMode === 'today' && (
-        <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
+        <div className="space-y-3">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 text-center">
             <span className="text-xs text-rose-400 font-extrabold uppercase tracking-wider block mb-1">Lịch Học Hôm Nay</span>
-            <h3 className="text-lg font-extrabold text-white">{todayDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</h3>
+            <h3 className="text-base font-extrabold text-white">{todayDate.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</h3>
           </div>
           {todayMatching.length === 0 ? (
-            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 text-center space-y-3">
-              <div className="w-16 h-16 bg-rose-500/10 text-rose-400 rounded-full flex items-center justify-center mx-auto text-2xl">🥳</div>
-              <h4 className="text-base font-bold text-slate-200">Hôm Nay Bé Được Nghỉ Học!</h4>
-              <p className="text-xs text-slate-400 max-w-xs mx-auto">Không có lịch học nào trong ngày hôm nay. Dành thời gian nghỉ ngơi hoặc đi chill cùng Anh Iu nhen 💕</p>
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 text-center space-y-2">
+              <h4 className="text-sm font-bold text-slate-200">Không có lịch học hôm nay</h4>
+              <p className="text-xs text-slate-400">Bạn không có môn học nào được xếp lịch trong ngày hôm nay.</p>
             </div>
           ) : (
             <div className="space-y-3">

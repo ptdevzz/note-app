@@ -68,7 +68,7 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick, savedCo
           }`}
         >
           <GraduationCap className={`w-5 h-5 ${activeTab === 'timetable' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
-          <span className="text-[11px] mt-1 font-medium tracking-tight">TKB Bé Yêu</span>
+          <span className="text-[11px] mt-1 font-medium tracking-tight">Thời Khóa Biểu</span>
         </button>
 
         {/* Tab 4: Weekend Plan */}

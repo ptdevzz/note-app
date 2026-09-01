@@ -48,7 +48,7 @@ export default function TimetableExportModal({ isOpen, onClose, timetable, selec
     ctx.fillStyle = '#fb7185';
     ctx.font = 'bold 28px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('💕 THỜI KHÓA BIỂU BÉ YÊU 💕', width / 2, 50);
+    ctx.fillText('THỜI KHÓA BIỂU HỌC KỲ I', width / 2, 50);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 36px sans-serif';
@@ -192,10 +192,10 @@ export default function TimetableExportModal({ isOpen, onClose, timetable, selec
 
     // FOOTER (Gọn gàng)
     const footerY = tableY + tableH + 35;
-    ctx.fillStyle = '#f43f5e';
-    ctx.font = 'bold 20px sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = 'bold 18px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('💖 Thiết kế bởi Anh Iu dành riêng cho Bé Yêu 💕', width / 2, footerY);
+    ctx.fillText(`Lớp ${timetable.className} • UsWeekends App`, width / 2, footerY);
 
     const link = document.createElement('a');
     link.download = `TKB_BeYeu_Tuan_${selectedWeek}.png`;
