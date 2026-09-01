@@ -1,0 +1,262 @@
+{
+  "semester": "HK1 - NH 2026-2027",
+  "className": "26CĐTT2",
+  "startDate": "2026-09-07",
+  "endDate": "2027-01-23",
+  "notes": [
+    "Thời khóa biểu HK1 (07/09/2026 đến 23/01/2027) tập trung tại Cơ sở 2.",
+    "Sinh viên khóa 2026 học GDQP-AN tập trung tại Trường Quân sự Quân khu 7 từ 09/11/2026 đến 21/11/2026 (tạm dừng các môn học tại Trường).",
+    "Thời gian học Lý thuyết: Tiết 1-5 (07h15 - 11h15), Tiết 6-10 (12h30 - 16h30).",
+    "Thời gian học Thực hành: Tiết 1-5 (07h15 - 12h15), Tiết 6-10 (12h30 - 17h30)."
+  ],
+  "subjects": [
+    {
+      "id": "sub_1",
+      "tt": "1",
+      "code": "CSLL - 4",
+      "name": "Cơ sở lý luận báo chí truyền thông",
+      "credits": 2,
+      "type": "theory",
+      "lecturer": "Trần Thị Hồng Hiếu",
+      "startDate": "12/09/2026",
+      "endDate": "17/10/2026",
+      "schedules": [
+        { "dayOfWeek": 7, "session": "morning", "lessons": "1-5", "room": "D404", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_2",
+      "tt": "2",
+      "code": "GDQPAN  - 4",
+      "name": "Giáo dục Quốc phòng và An ninh",
+      "credits": 3,
+      "type": "military",
+      "lecturer": "Trường Quân sự Quân khu 7",
+      "startDate": "09/11/2026",
+      "endDate": "21/11/2026",
+      "schedules": [],
+      "notes": "Sinh viên học tập trung tại Trung tâm Giáo dục Quốc phòng - An ninh, Quân sự Quân khu 7."
+    },
+    {
+      "id": "sub_3",
+      "tt": "3",
+      "code": "KBTT26 - 2",
+      "name": "Kịch bản truyền thông",
+      "credits": 2,
+      "type": "theory",
+      "lecturer": "Vũ Thị Huyền Châm",
+      "startDate": "21/10/2026",
+      "endDate": "04/11/2026",
+      "schedules": [
+        { "dayOfWeek": 4, "session": "morning", "lessons": "1-5", "room": "D402", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_4",
+      "tt": "",
+      "code": "KBTT26 - 2",
+      "name": "TH Kịch bản truyền thông",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "Vũ Thị Huyền Châm",
+      "startDate": "25/11/2026",
+      "endDate": "30/12/2026",
+      "schedules": [
+        { "dayOfWeek": 4, "session": "morning", "lessons": "1-5", "room": "D109 / Sân trường", "group": "N1" },
+        { "dayOfWeek": 4, "session": "afternoon", "lessons": "6-10", "room": "D109 / Ngoài trường", "group": "N2" }
+      ],
+      "notes": "Mỗi tuần 1 lượt thực hành, chia 2 nhóm. Lượt 1,3,4,6: D109 + Sân trường; Lượt 2,5: Ngoài trường."
+    },
+    {
+      "id": "sub_5",
+      "tt": "4",
+      "code": "KNBC - 2",
+      "name": "Kỹ năng nghiệp vụ báo chí truyền thông",
+      "credits": 3,
+      "type": "theory",
+      "lecturer": "Phạm Văn Dũng",
+      "startDate": "24/11/2026",
+      "endDate": "01/12/2026",
+      "schedules": [
+        { "dayOfWeek": 3, "session": "morning", "lessons": "1-5", "room": "D402", "group": "ALL" },
+        { "dayOfWeek": 6, "session": "morning", "lessons": "1-5", "room": "D402", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_6",
+      "tt": "",
+      "code": "KNBC - 2",
+      "name": "TH Kỹ năng nghiệp vụ báo chí truyền thông",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "Phạm Văn Dũng",
+      "startDate": "08/12/2026",
+      "endDate": "15/01/2027",
+      "schedules": [
+        { "dayOfWeek": 3, "session": "morning", "lessons": "1-5", "room": "D402 / D109 / D310 / D311", "group": "N1" },
+        { "dayOfWeek": 3, "session": "afternoon", "lessons": "6-10", "room": "D402 / Ngoài trường", "group": "N2" },
+        { "dayOfWeek": 6, "session": "morning", "lessons": "1-5", "room": "D402 / D109 / D310 / D311", "group": "N1" },
+        { "dayOfWeek": 6, "session": "afternoon", "lessons": "6-10", "room": "D402 / Ngoài trường", "group": "N2" }
+      ],
+      "notes": "Mỗi tuần 2 lượt thực hành, chia 2 nhóm."
+    },
+    {
+      "id": "sub_7",
+      "tt": "5",
+      "code": "KTPT - TT2",
+      "name": "Kỹ thuật sản xuất sản phẩm phát thanh",
+      "credits": 4,
+      "type": "theory",
+      "lecturer": "Lê Thị Hồng Ngọc + Nguyễn Lâm Viên",
+      "startDate": "07/09/2026",
+      "endDate": "23/09/2026",
+      "schedules": [
+        { "dayOfWeek": 2, "session": "afternoon", "lessons": "6-10", "room": "D406", "group": "ALL" },
+        { "dayOfWeek": 4, "session": "afternoon", "lessons": "6-10", "room": "D406", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_8",
+      "tt": "",
+      "code": "KTPT - TT2",
+      "name": "TH Kỹ thuật sản xuất sản phẩm phát thanh (máy tính)",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "Nguyễn Ngọc Thanh",
+      "startDate": "28/09/2026",
+      "endDate": "02/11/2026",
+      "schedules": [
+        { "dayOfWeek": 2, "session": "morning", "lessons": "1-5", "room": "D304", "group": "N1" },
+        { "dayOfWeek": 2, "session": "afternoon", "lessons": "6-10", "room": "D304", "group": "N2" }
+      ],
+      "notes": "Mỗi tuần 1 lượt thực hành, chia 2 nhóm."
+    },
+    {
+      "id": "sub_9",
+      "tt": "",
+      "code": "KTPT - TT2",
+      "name": "TH Kỹ thuật sản xuất sản phẩm phát thanh (phòng thu)",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "Châu Nghĩa Cường",
+      "startDate": "23/11/2026",
+      "endDate": "28/12/2026",
+      "schedules": [
+        { "dayOfWeek": 2, "session": "morning", "lessons": "1-5", "room": "D302", "group": "N1" },
+        { "dayOfWeek": 2, "session": "afternoon", "lessons": "6-10", "room": "D302", "group": "N2" }
+      ],
+      "notes": "Mỗi tuần 1 lượt thực hành, chia 2 nhóm."
+    },
+    {
+      "id": "sub_10",
+      "tt": "6",
+      "code": "NMTT - 2",
+      "name": "Nhập môn truyền thông đa phương tiện",
+      "credits": 2,
+      "type": "theory",
+      "lecturer": "Nguyễn Thị Mỹ Hạnh",
+      "startDate": "08/09/2026",
+      "endDate": "13/10/2026",
+      "schedules": [
+        { "dayOfWeek": 3, "session": "afternoon", "lessons": "6-10", "room": "D405", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_11",
+      "tt": "7",
+      "code": "TA1 - 4",
+      "name": "Tiếng Anh 1",
+      "credits": 2,
+      "type": "theory",
+      "lecturer": "GVTG: Lữ Thị Kim Thúy",
+      "startDate": "17/10/2026",
+      "endDate": "28/11/2026",
+      "schedules": [
+        { "dayOfWeek": 7, "session": "afternoon", "lessons": "6-10", "room": "Online / D405", "group": "ALL" }
+      ],
+      "notes": "Buổi 1-4: Online. Buổi 5: Phòng D405. Nghỉ 2 tuần học GDQP-AN."
+    },
+    {
+      "id": "sub_12",
+      "tt": "",
+      "code": "TA1 - 4",
+      "name": "TH Tiếng Anh 1",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "GVTG: Lữ Thị Kim Thúy",
+      "startDate": "05/12/2026",
+      "endDate": "16/01/2027",
+      "schedules": [
+        { "dayOfWeek": 7, "session": "afternoon", "lessons": "6-10", "room": "D405", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_13",
+      "tt": "8",
+      "code": "TH - 2",
+      "name": "Tin học",
+      "credits": 3,
+      "type": "theory",
+      "lecturer": "Huỳnh Thị Mai",
+      "startDate": "10/09/2026",
+      "endDate": "24/09/2026",
+      "schedules": [
+        { "dayOfWeek": 5, "session": "afternoon", "lessons": "6-10", "room": "D405", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_14",
+      "tt": "",
+      "code": "TH - 2",
+      "name": "TH Tin học",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "Phạm Tuyết Trang",
+      "startDate": "01/10/2026",
+      "endDate": "31/12/2026",
+      "schedules": [
+        { "dayOfWeek": 5, "session": "morning", "lessons": "1-5", "room": "D101", "group": "N1" },
+        { "dayOfWeek": 5, "session": "afternoon", "lessons": "6-10", "room": "D101", "group": "N2" }
+      ],
+      "notes": "Mỗi tuần 1 lượt thực hành, chia 2 nhóm. Nghỉ 2 tuần học GDQP-AN."
+    },
+    {
+      "id": "sub_15",
+      "tt": "9",
+      "code": "TVTH - 2",
+      "name": "Tiếng Việt thực hành",
+      "credits": 2,
+      "type": "theory",
+      "lecturer": "Nguyễn Sỹ Tuấn",
+      "startDate": "11/09/2026",
+      "endDate": "25/09/2026",
+      "schedules": [
+        { "dayOfWeek": 6, "session": "morning", "lessons": "1-5", "room": "D406", "group": "ALL" }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sub_16",
+      "tt": "",
+      "code": "TVTH - 2",
+      "name": "TH Tiếng Việt thực hành",
+      "credits": 0,
+      "type": "practice",
+      "lecturer": "Nguyễn Sỹ Tuấn",
+      "startDate": "02/10/2026",
+      "endDate": "06/11/2026",
+      "schedules": [
+        { "dayOfWeek": 6, "session": "morning", "lessons": "1-5", "room": "D308", "group": "N1" },
+        { "dayOfWeek": 6, "session": "afternoon", "lessons": "6-10", "room": "D308", "group": "N2" }
+      ],
+      "notes": "Mỗi tuần 1 lượt thực hành, chia 2 nhóm."
+    }
+  ]
+}
