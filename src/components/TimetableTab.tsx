@@ -188,6 +188,11 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
   const currentDow = currentJsDay === 0 ? 8 : currentJsDay + 1;
   const todayMatching = matchingSubjects.filter(item => item.dayOfWeek === currentDow);
 
+  // Tính tuần thực tế hiện tại dựa trên ngày hôm nay
+  const diffTimeToday = todayDate.getTime() - semesterStart.getTime();
+  const diffDaysToday = Math.floor(diffTimeToday / (1000 * 3600 * 24));
+  const currentActualWeek = Math.floor(diffDaysToday / 7) + 1;
+
   const isMilitaryWeek = selectedWeek === 10 || selectedWeek === 11;
 
   // Lịch tháng Helper
@@ -437,7 +442,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
         <div className="space-y-3">
           {days.map(({ dow, label }) => {
             const dayItems = matchingSubjects.filter(i => i.dayOfWeek === dow);
-            const isToday = currentDow === dow;
+            const isToday = selectedWeek === currentActualWeek && currentDow === dow;
             return (
               <div key={dow} className={`bg-slate-900/90 border rounded-2xl p-3 transition-all ${isToday ? 'border-rose-500/60 shadow-lg shadow-rose-950/20' : 'border-slate-800'}`}>
                 <div className="flex items-center justify-between mb-2">
