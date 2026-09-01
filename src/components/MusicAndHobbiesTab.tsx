@@ -71,8 +71,28 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
     };
   }, []);
 
-  // Realtime Audio Play/Pause Effect & Progress Timer
+  // Realtime Audio Play/Pause Effect & Lockscreen MediaSession API (Khóa màn hình nghe nhạc)
   useEffect(() => {
+    if (typeof window !== 'undefined' && 'mediaSession' in navigator && currentSong) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.title,
+        artist: currentSong.artist,
+        album: 'UsWeekends Playlist',
+        artwork: [
+          { src: currentSong.coverUrl, sizes: '512x512', type: 'image/png' }
+        ]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => {
+        setIsPlaying(true);
+        if (audioRef.current) audioRef.current.play();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        setIsPlaying(false);
+        if (audioRef.current) audioRef.current.pause();
+      });
+    }
+
     if (!audioRef.current) return;
     if (isPlaying) {
       audioRef.current.play().catch((err) => console.warn('Audio play error:', err));
@@ -628,58 +648,74 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
         </div>
       )}
 
-      {/* --- RESPONSIVE STICKY REALTIME MUSIC PLAYER BAR (PWA iOS SAFE AUDIO ENGINE) --- */}
+      {/* --- SLEEK PREMIUM MUSIC PLAYER BAR (100% HIDDEN YOUTUBE ENGINE) --- */}
       {currentSong && (
-        <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-40 bg-slate-900/95 border border-pink-500/40 rounded-2xl p-3 shadow-2xl backdrop-blur-xl space-y-2 animate-in slide-in-from-bottom-5">
-          <div className="flex items-center justify-between space-x-2.5">
-            <img src={currentSong.coverUrl} alt={currentSong.title} className="w-10 h-10 rounded-xl object-cover border border-slate-800 shrink-0" />
-
-            <div className="min-w-0 flex-1 pr-1">
-              <div className="flex items-center space-x-1.5">
-                <span className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'} shrink-0`} />
-                <p className="text-xs font-bold text-white truncate leading-tight">{currentSong.title}</p>
-              </div>
-              <p className="text-[10px] text-slate-400 truncate mt-0.5">{currentSong.artist}</p>
+        <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-40 bg-slate-950/95 border border-pink-500/30 rounded-2xl p-3 shadow-2xl backdrop-blur-2xl space-y-2.5 animate-in slide-in-from-bottom-5">
+          {/* 100% Hidden Engine (YouTube iframe ẩn hoàn toàn không ảnh hưởng UI) */}
+          {currentSong.youtubeId && (
+            <div className="absolute w-[1px] h-[1px] opacity-0 overflow-hidden pointer-events-none -z-50">
+              <iframe
+                className="w-1 h-1"
+                src={`https://www.youtube-nocookie.com/embed/${currentSong.youtubeId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&enablejsapi=1`}
+                allow="autoplay; encrypted-media"
+              />
             </div>
+          )}
 
-            <div className="flex items-center space-x-1.5 shrink-0">
-              {currentSong.youtubeId && (
-                <a
-                  href={`https://www.youtube.com/watch?v=${currentSong.youtubeId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2 py-1 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-400 text-[10px] font-bold flex items-center gap-1 transition"
-                  title="Nghe trên YouTube"
-                >
-                  <Youtube className="w-3.5 h-3.5" />
-                  <span>Mở YouTube</span>
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* HTML5 Audio Element cho MP3 Links */}
+          {/* HTML5 Audio cho nhạc MP3 trực tiếp */}
           {currentSong.audioUrl && (
             <audio
               ref={audioRef}
               src={currentSong.audioUrl}
-              controls
               playsInline
-              className="w-full h-8 rounded-lg text-xs accent-rose-500"
+              className="hidden"
             />
           )}
 
-          {/* Embedded YouTube Player cho PWA iOS */}
-          {currentSong.youtubeId && (
-            <div className="w-full h-40 rounded-xl overflow-hidden border border-slate-800 bg-black mt-1">
-              <iframe
-                className="w-full h-full"
-                src={`https://www.youtube-nocookie.com/embed/${currentSong.youtubeId}?playsinline=1&enablejsapi=1`}
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
+          <div className="flex items-center justify-between space-x-3">
+            {/* Vinyl Record Cover Art */}
+            <div className="relative shrink-0">
+              <img
+                src={currentSong.coverUrl}
+                alt={currentSong.title}
+                className={`w-11 h-11 rounded-full object-cover border-2 border-rose-500/50 shadow-md ${isPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}
+              />
+              <div className="absolute inset-0 m-auto w-3 h-3 bg-slate-950 rounded-full border border-rose-400/60" />
+            </div>
+
+            {/* Song Details */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1.5 mb-0.5">
+                <span className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'} shrink-0`} />
+                <p className="text-xs font-extrabold text-white truncate leading-tight">{currentSong.title}</p>
+              </div>
+              <p className="text-[10px] text-slate-400 truncate">{currentSong.artist}</p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center space-x-2 shrink-0">
+              <button
+                onClick={() => handlePlaySong(currentSong)}
+                className="w-9 h-9 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-rose-950/40 active:scale-95 transition-all"
+              >
+                {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Smooth Progress Indicator */}
+          <div className="space-y-1 pt-1 border-t border-slate-800/80">
+            <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden relative">
+              <div
+                className="h-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, Math.max(0, (currentTime / (duration || 1)) * 100))}%` }}
               />
             </div>
-          )}
+            <div className="flex justify-between items-center text-[9px] font-mono text-slate-400 px-0.5">
+              <span>{formatSeconds(currentTime)}</span>
+              <span>{formatSeconds(duration)}</span>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -81,6 +81,10 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
 
   // Real-time Data Subscriptions (Firebase Firestore + LocalStorage fallback)
   useEffect(() => {
+    setIsPlacesLoading(true);
+    setIsCouponsLoading(true);
+    setIsPhotoboothsLoading(true);
+
     const unsubPlaces = dataService.subscribePlaces((items) => {
       setPlaces(items);
       setIsPlacesLoading(false);
@@ -278,7 +282,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
               {currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'}
             </span>
             <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded-md border border-slate-800">
-              v2.5.3
+              v2.5.5
             </span>
           </div>
         </div>
