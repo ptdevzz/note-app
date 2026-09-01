@@ -89,16 +89,13 @@ export const dataService = {
   // --- REALTIME SUBSCRIBERS ---
 
   subscribePlaces(callback: (places: PlaceItem[]) => void): () => void {
-    // ⚡ INSTANT HYDRATION: Gọi ngay dữ liệu từ Cache hoặc Dữ liệu Mặc định (0.01s)
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_PLACES);
-        callback(local ? JSON.parse(local) : INITIAL_PLACES);
+        if (local) callback(JSON.parse(local));
       } catch (e) {
-        callback(INITIAL_PLACES);
+        console.warn('Lỗi đọc local places:', e);
       }
-    } else {
-      callback(INITIAL_PLACES);
     }
 
     if (isFirebaseConfigured && db) {
@@ -112,12 +109,14 @@ export const dataService = {
           callback(items);
         }, (err) => {
           console.warn('Lỗi Firestore subscribePlaces:', err);
+          this.getPlaces().then(callback);
         });
       } catch (err) {
         console.warn('Không thể đăng ký Firestore subscribePlaces:', err);
       }
     }
 
+    this.getPlaces().then(callback);
     return () => {};
   },
 

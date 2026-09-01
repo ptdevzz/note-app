@@ -25,22 +25,17 @@ export const isFirebaseConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API
 
 if (isFirebaseConfigured) {
   try {
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    
-    if (!db) {
-      if (typeof window !== 'undefined') {
-        db = initializeFirestore(app, {
-          localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager()
-          })
-        });
-      } else {
-        db = getFirestore(app);
-      }
+    let app;
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } else {
+      app = getApp();
+      db = getFirestore(app);
     }
     auth = getAuth(app);
   } catch (error) {
-    console.warn('Cấu hình Firebase fallback mock:', error);
+    console.warn('Cấu hình Firebase chưa đầy đủ, chuyển sang chế độ Mock Storage.', error);
   }
 }
 
