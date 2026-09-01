@@ -271,7 +271,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
       <div className="px-3 pt-3 pb-1 flex items-center justify-between gap-2">
         <div className="flex items-center space-x-2 shrink-0">
           <div className="w-8 h-8 rounded-full overflow-hidden border border-rose-400/40 shrink-0">
-            <img src="/avatar_couple.jpg" alt="Avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+            <img src="/couple.png" alt="Avatar" className="w-full h-full object-cover" />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] bg-rose-500/20 text-rose-300 font-extrabold px-2 py-0.5 rounded-full border border-rose-500/30 inline-block">

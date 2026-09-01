@@ -632,13 +632,13 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
       {currentSong && (
         <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-40 bg-slate-900/95 border border-pink-500/40 rounded-2xl p-2.5 shadow-2xl backdrop-blur-xl space-y-1.5 animate-in slide-in-from-bottom-5">
           <div className="flex items-center justify-between space-x-2.5">
-            {/* YouTube Full Track Engine */}
+            {/* YouTube Full Track Engine với Mobile Playsinline Support */}
             {currentSong.youtubeId ? (
-              <div className="w-11 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-800 relative bg-black">
+              <div className="w-12 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-800 relative bg-black">
                 <iframe
                   className="w-full h-full object-cover"
-                  src={`https://www.youtube-nocookie.com/embed/${currentSong.youtubeId}?autoplay=${isPlaying ? 1 : 0}&controls=1`}
-                  allow="autoplay; encrypted-media"
+                  src={`https://www.youtube-nocookie.com/embed/${currentSong.youtubeId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&enablejsapi=1&controls=1`}
+                  allow="autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
                 />
               </div>
@@ -655,6 +655,17 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
             </div>
 
             <div className="flex items-center space-x-1 shrink-0">
+              {currentSong.youtubeId && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${currentSong.youtubeId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-xl bg-red-600/20 hover:bg-red-600/30 border border-red-500/40 text-red-400 flex items-center justify-center transition"
+                  title="Mở trên YouTube"
+                >
+                  <Youtube className="w-4 h-4" />
+                </a>
+              )}
               <button
                 onClick={() => handlePlaySong(currentSong)}
                 className="w-8 h-8 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-md active:scale-95 transition-transform"
