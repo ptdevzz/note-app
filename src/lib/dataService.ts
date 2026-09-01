@@ -1,4 +1,4 @@
-import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory, TimetableData } from './types';
+import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory, TimetableData, LoveSong, CoupleHobby, SharedMusicState } from './types';
 import defaultScheduleData from '../data/schedule_26cdtt2.json';
 import { db, isFirebaseConfigured } from './firebase';
 import { 

@@ -659,10 +659,12 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
 
           {/* Sub-view: Multi-Week View */}
           {planMode === 'calendar' ? (
-            <WeekCalendarView
+            <CurrentWeekendView
               places={places}
-              selectedWeekOffset={selectedWeekOffset}
-              onSelectWeek={setSelectedWeekOffset}
+              onToggleVisited={handleToggleVisited}
+              onOpenAddModal={() => setIsAddOpen(true)}
+              onOpenSpinWheel={() => setIsSpinOpen(true)}
+              onAssignDate={handleAssignDate}
             />
           ) : (
             <CurrentWeekendView
