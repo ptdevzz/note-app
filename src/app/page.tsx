@@ -282,7 +282,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
               {currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'}
             </span>
             <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded-md border border-slate-800">
-              v2.5.5
+              v2.5.6
             </span>
           </div>
         </div>

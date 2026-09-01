@@ -186,12 +186,42 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
   const todayDate = new Date();
   const currentJsDay = todayDate.getDay();
   const currentDow = currentJsDay === 0 ? 8 : currentJsDay + 1;
-  const todayMatching = matchingSubjects.filter(item => item.dayOfWeek === currentDow);
 
   // Tính tuần thực tế hiện tại dựa trên ngày hôm nay
   const diffTimeToday = todayDate.getTime() - semesterStart.getTime();
   const diffDaysToday = Math.floor(diffTimeToday / (1000 * 3600 * 24));
   const currentActualWeek = Math.floor(diffDaysToday / 7) + 1;
+
+  // ⚡ FIX BUG: Lịch học hôm nay phải lọc chính xác theo tuần thực tế hiện tại (currentActualWeek)
+  const getTodayActualSubjects = () => {
+    const items: {
+      dayOfWeek: number;
+      session: 'morning' | 'afternoon';
+      subject: TimetableSubject;
+      lessons: string;
+      room: string;
+      group: string;
+    }[] = [];
+
+    timetable.subjects.forEach((sub) => {
+      if (!isSubjectActiveInWeek(sub, currentActualWeek)) return;
+      sub.schedules.forEach((sch) => {
+        if (sch.dayOfWeek === currentDow && (sch.group === 'ALL' || sch.group === selectedGroup)) {
+          items.push({
+            dayOfWeek: sch.dayOfWeek,
+            session: sch.session,
+            subject: sub,
+            lessons: sch.lessons,
+            room: sch.room,
+            group: sch.group,
+          });
+        }
+      });
+    });
+    return items;
+  };
+
+  const todayMatching = getTodayActualSubjects();
 
   const isMilitaryWeek = selectedWeek === 10 || selectedWeek === 11;
 
