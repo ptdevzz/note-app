@@ -220,41 +220,41 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
   };
 
   return (
-    <div className="pb-24 pt-4 px-3 max-w-md mx-auto min-h-screen text-slate-100 animate-fade-in">
+    <div className="pb-24 pt-2 px-2 max-w-md mx-auto min-h-screen text-slate-100 animate-fade-in">
       {/* HEADER BANNER */}
-      <div className="bg-gradient-to-r from-rose-900/40 via-purple-900/30 to-slate-900/80 border border-rose-500/20 rounded-3xl p-4 mb-4 backdrop-blur-md relative overflow-hidden shadow-lg shadow-rose-950/20">
+      <div className="bg-gradient-to-r from-rose-900/40 via-purple-900/30 to-slate-900/80 border border-rose-500/20 rounded-2xl p-3 mb-3 backdrop-blur-md relative overflow-hidden shadow-lg shadow-rose-950/20">
         <div className="absolute -right-6 -top-6 w-28 h-28 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="flex items-center justify-between relative z-10">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-1.5 mb-0.5">
               <span className="bg-rose-500/20 text-rose-400 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-rose-500/30 uppercase tracking-wider">
                 {timetable.className}
               </span>
               <span className="text-slate-400 text-xs font-medium">{timetable.semester}</span>
             </div>
-            <h2 className="text-xl font-extrabold text-white flex items-center gap-1.5 tracking-tight">
+            <h2 className="text-lg font-extrabold text-white flex items-center gap-1.5 tracking-tight">
               Thời Khóa Biểu <Heart className="w-4 h-4 fill-rose-500 text-rose-500 inline" />
             </h2>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={() => setIsExportModalOpen(true)} className="p-2.5 bg-slate-800/80 hover:bg-slate-700 text-rose-300 rounded-2xl border border-slate-700/60 transition active:scale-95 flex items-center gap-1 text-xs font-semibold" title="Xuất ảnh TKB">
+            <button onClick={() => setIsExportModalOpen(true)} className="p-2 bg-slate-800/80 hover:bg-slate-700 text-rose-300 rounded-xl border border-slate-700/60 transition active:scale-95 flex items-center gap-1 text-xs font-semibold" title="Xuất ảnh TKB">
               <Download className="w-4 h-4" />
             </button>
-            <button onClick={() => setIsImportModalOpen(true)} className="p-2.5 bg-slate-800/80 hover:bg-slate-700 text-emerald-300 rounded-2xl border border-slate-700/60 transition active:scale-95 flex items-center gap-1 text-xs font-semibold" title="Import HK mới">
+            <button onClick={() => setIsImportModalOpen(true)} className="p-2 bg-slate-800/80 hover:bg-slate-700 text-emerald-300 rounded-xl border border-slate-700/60 transition active:scale-95 flex items-center gap-1 text-xs font-semibold" title="Import HK mới">
               <Upload className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* NÚT CHỌN NHÓM THỰC HÀNH GỌN NHẸ */}
-        <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+        <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between">
           <span className="text-xs font-medium text-slate-400">Nhóm thực hành của bé:</span>
           <div className="bg-slate-950/80 p-0.5 rounded-xl border border-slate-800 flex gap-1">
             {(['N1', 'N2'] as const).map(g => (
               <button
                 key={g}
                 onClick={() => handleGroupChange(g)}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                className={`px-2.5 py-0.5 text-xs font-bold rounded-lg transition-all ${
                   selectedGroup === g
                     ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
                     : 'text-slate-400 hover:text-slate-200'
@@ -269,7 +269,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
 
       {/* GDQP NOTICE */}
       {isMilitaryWeek && (
-        <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-2.5 text-amber-200 text-xs">
+        <div className="mb-3 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-2 text-amber-200 text-xs">
           <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold text-amber-300">Đợt Học GDQP-AN (Quân Khu 7)</span>
@@ -279,9 +279,9 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
       )}
 
       {/* VIEW MODE TOGGLE BUTTONS */}
-      <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex items-center justify-between gap-2 mb-3">
         {viewMode === 'grid' && (
-          <div className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-3 py-2 flex items-center justify-between">
+          <div className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-2.5 py-1.5 flex items-center justify-between">
             <button onClick={() => setSelectedWeek(w => Math.max(1, w - 1))} disabled={selectedWeek <= 1} className="p-1 text-slate-400 hover:text-white disabled:opacity-30 transition">
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -304,7 +304,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
             { mode: 'list' as const, icon: BookOpen, tip: 'Tất Cả Môn' }
           ].map(v => (
             <button key={v.mode} onClick={() => setViewMode(v.mode)} title={v.tip}
-              className={`p-2 rounded-xl text-xs font-semibold transition ${viewMode === v.mode ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' : 'text-slate-400 hover:text-slate-200'}`}>
+              className={`p-1.5 rounded-xl text-xs font-semibold transition ${viewMode === v.mode ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' : 'text-slate-400 hover:text-slate-200'}`}>
               <v.icon className="w-4 h-4" />
             </button>
           ))}
@@ -313,32 +313,32 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
 
       {/* VIEW: MONTH CALENDAR (Giao diện giống Hình 2) */}
       {viewMode === 'month' && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Calendar Header & Matrix */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-xl">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 shadow-xl">
             {/* Header Tháng & Nút Chuyển Tháng */}
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="text-base font-extrabold text-white flex items-center gap-1">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="text-sm font-extrabold text-white flex items-center gap-1">
                 tháng {currentMonthDate.getMonth() + 1}, {currentMonthDate.getFullYear()}
               </h3>
               <div className="flex gap-1">
                 <button
                   onClick={() => setCurrentMonthDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-                  className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 transition"
+                  className="p-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setCurrentMonthDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-                  className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 transition"
+                  className="p-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
             {/* Thứ trong tuần */}
-            <div className="grid grid-cols-7 text-center mb-2 text-xs font-bold text-slate-400">
+            <div className="grid grid-cols-7 text-center mb-1.5 text-[11px] font-bold text-slate-400">
               <span>Th 2</span>
               <span>Th 3</span>
               <span>Th 4</span>
@@ -349,7 +349,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
             </div>
 
             {/* Các Ngày Trong Tháng */}
-            <div className="grid grid-cols-7 gap-y-2 text-center text-sm font-medium">
+            <div className="grid grid-cols-7 gap-y-1.5 text-center text-xs font-medium">
               {monthMatrix.map((dateObj, idx) => {
                 if (!dateObj) return <div key={idx} />;
 
@@ -362,10 +362,10 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
                   <button
                     key={idx}
                     onClick={() => setSelectedCalendarDate(dateObj)}
-                    className="flex flex-col items-center justify-center py-1.5 relative transition active:scale-90"
+                    className="flex flex-col items-center justify-center py-1 relative transition active:scale-90"
                   >
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${
                         isSelected
                           ? 'bg-sky-500 text-white shadow-md shadow-sky-500/40 scale-105'
                           : isToday
@@ -387,39 +387,39 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
           </div>
 
           {/* Chi tiết môn học trong ngày được chọn (phía dưới lịch) */}
-          <div className="space-y-3">
-            <div className="inline-block bg-sky-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-md shadow-sky-500/20">
+          <div className="space-y-2.5">
+            <div className="inline-block bg-sky-500 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-xl shadow-md shadow-sky-500/20">
               {selectedCalendarDate.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}
             </div>
 
             {selectedDateSubjects.length === 0 ? (
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 text-center text-slate-400 text-xs italic">
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 text-center text-slate-400 text-xs italic">
                 Không có lịch học trong ngày này 🎉
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {selectedDateSubjects.map((item, idx) => (
-                  <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 border-l-4 border-l-emerald-500 shadow-md">
-                    <h4 className="font-extrabold text-white text-sm mb-2">{item.subject.name}</h4>
-                    <div className="space-y-1 text-xs text-slate-300 font-mono">
-                      <div className="flex justify-between">
+                  <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 border-l-4 border-l-emerald-500 shadow-md">
+                    <h4 className="font-extrabold text-white text-xs mb-2 leading-snug">{item.subject.name}</h4>
+                    <div className="space-y-1.5 text-xs text-slate-300 font-mono">
+                      <div className="flex items-center justify-between">
                         <span className="text-slate-400">Tiết :</span>
                         <span className="font-bold text-white">{item.lessons}</span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex items-center justify-between">
                         <span className="text-slate-400">Giờ :</span>
                         <span className="font-bold text-white">{item.session === 'morning' ? '07:15 - 11:15' : '12:30 - 16:30'}</span>
                       </div>
                       {item.room && (
-                        <div className="flex justify-between">
+                        <div className="flex items-center justify-between">
                           <span className="text-slate-400">Phòng :</span>
                           <span className="font-bold text-rose-400">{item.room}</span>
                         </div>
                       )}
                       {item.subject.lecturer && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Giảng viên :</span>
-                          <span className="font-bold text-slate-200">{item.subject.lecturer}</span>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-slate-400 shrink-0">Giảng viên :</span>
+                          <span className="font-bold text-slate-200 text-right max-w-[65%] leading-tight break-words">{item.subject.lecturer}</span>
                         </div>
                       )}
                     </div>
@@ -430,6 +430,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
           </div>
         </div>
       )}
+
 
       {/* VIEW: GRID */}
       {viewMode === 'grid' && (
