@@ -409,7 +409,9 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
                     <div className="space-y-1.5 text-xs text-slate-300 font-mono">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Tiết :</span>
-                        <span className="font-bold text-white">{item.lessons}</span>
+                        <span className="font-bold text-white">
+                          {item.lessons} ({item.session === 'morning' ? 'Sáng' : 'Chiều'})
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Giờ :</span>
@@ -467,7 +469,9 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
                                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${item.session === 'morning' ? 'bg-amber-500/20 text-amber-300' : 'bg-indigo-500/20 text-indigo-300'}`}>
                                   {item.session === 'morning' ? '☀️ Sáng' : '🌙 Chiều'}
                                 </span>
-                                <span className="font-mono text-[11px] text-rose-300 font-bold">Tiết {item.lessons}</span>
+                                <span className="font-mono text-[11px] text-rose-300 font-bold">
+                                  Tiết {item.lessons} ({item.session === 'morning' ? 'Sáng' : 'Chiều'})
+                                </span>
                               </div>
                               <h4 className="font-bold text-slate-100 text-sm tracking-tight mb-1">{item.subject.name}</h4>
                               <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
