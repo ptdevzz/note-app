@@ -89,14 +89,16 @@ export const dataService = {
   // --- REALTIME SUBSCRIBERS ---
 
   subscribePlaces(callback: (places: PlaceItem[]) => void): () => void {
-    // ⚡ FIX COLD START: Load ngay từ LocalStorage trước (0.01s) để render UI ngay lập tức!
+    // ⚡ INSTANT HYDRATION: Gọi ngay dữ liệu từ Cache hoặc Dữ liệu Mặc định (0.01s)
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_PLACES);
-        if (local) callback(JSON.parse(local));
+        callback(local ? JSON.parse(local) : INITIAL_PLACES);
       } catch (e) {
-        console.warn('Lỗi đọc local places cache:', e);
+        callback(INITIAL_PLACES);
       }
+    } else {
+      callback(INITIAL_PLACES);
     }
 
     if (isFirebaseConfigured && db) {
@@ -116,7 +118,6 @@ export const dataService = {
       }
     }
 
-    this.getPlaces().then(callback);
     return () => {};
   },
 
@@ -124,10 +125,12 @@ export const dataService = {
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_PHOTOBOOTHS);
-        if (local) callback(JSON.parse(local));
+        callback(local ? JSON.parse(local) : INITIAL_PHOTOBOOTHS);
       } catch (e) {
-        console.warn('Lỗi đọc local photobooths cache:', e);
+        callback(INITIAL_PHOTOBOOTHS);
       }
+    } else {
+      callback(INITIAL_PHOTOBOOTHS);
     }
 
     if (isFirebaseConfigured && db) {
@@ -157,7 +160,6 @@ export const dataService = {
       }
     }
 
-    this.getPhotobooths().then(callback);
     return () => {};
   },
 
@@ -165,10 +167,12 @@ export const dataService = {
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_COUPONS);
-        if (local) callback(JSON.parse(local));
+        callback(local ? JSON.parse(local) : INITIAL_COUPONS);
       } catch (e) {
-        console.warn('Lỗi đọc local coupons cache:', e);
+        callback(INITIAL_COUPONS);
       }
+    } else {
+      callback(INITIAL_COUPONS);
     }
 
     if (isFirebaseConfigured && db) {
@@ -198,18 +202,20 @@ export const dataService = {
       }
     }
 
-    this.getCoupons().then(callback);
     return () => {};
   },
 
   subscribeLoveNote(callback: (note: string) => void): () => void {
+    const defaultNote = 'Anh yêu em nhiều lắm! 💕';
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_NOTE);
-        if (local) callback(local);
+        callback(local || defaultNote);
       } catch (e) {
-        console.warn('Lỗi đọc local note cache:', e);
+        callback(defaultNote);
       }
+    } else {
+      callback(defaultNote);
     }
 
     if (isFirebaseConfigured && db) {
@@ -231,18 +237,20 @@ export const dataService = {
       }
     }
 
-    this.getLoveNote().then(callback);
     return () => {};
   },
 
   subscribeMood(callback: (mood: MoodStatus) => void): () => void {
+    const defaultMood: MoodStatus = { emoji: '🥰', label: 'Vui vẻ', updatedAt: 'Hôm nay', by: 'Bé Yêu' };
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_MOOD);
-        if (local) callback(JSON.parse(local));
+        callback(local ? JSON.parse(local) : defaultMood);
       } catch (e) {
-        console.warn('Lỗi đọc local mood cache:', e);
+        callback(defaultMood);
       }
+    } else {
+      callback(defaultMood);
     }
 
     if (isFirebaseConfigured && db) {

@@ -32,8 +32,7 @@ if (isFirebaseConfigured) {
         db = initializeFirestore(app, {
           localCache: persistentLocalCache({
             tabManager: persistentMultipleTabManager()
-          }),
-          experimentalAutoDetectLongPolling: true, // Tự động dùng Long Polling nếu WebSocket bị chặn/lag
+          })
         });
       } else {
         db = getFirestore(app);
