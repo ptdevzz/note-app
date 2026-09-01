@@ -89,6 +89,16 @@ export const dataService = {
   // --- REALTIME SUBSCRIBERS ---
 
   subscribePlaces(callback: (places: PlaceItem[]) => void): () => void {
+    // ⚡ FIX COLD START: Load ngay từ LocalStorage trước (0.01s) để render UI ngay lập tức!
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_PLACES);
+        if (local) callback(JSON.parse(local));
+      } catch (e) {
+        console.warn('Lỗi đọc local places cache:', e);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'places'), orderBy('createdAt', 'desc'));
@@ -107,19 +117,19 @@ export const dataService = {
     }
 
     this.getPlaces().then(callback);
-    if (typeof window !== 'undefined') {
-      const handleStorage = (e: StorageEvent) => {
-        if (e.key === STORAGE_KEY_PLACES) {
-          this.getPlaces().then(callback);
-        }
-      };
-      window.addEventListener('storage', handleStorage);
-      return () => window.removeEventListener('storage', handleStorage);
-    }
     return () => {};
   },
 
   subscribePhotobooths(callback: (photobooths: PhotoboothMemory[]) => void): () => void {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_PHOTOBOOTHS);
+        if (local) callback(JSON.parse(local));
+      } catch (e) {
+        console.warn('Lỗi đọc local photobooths cache:', e);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'photobooths'));
@@ -129,7 +139,6 @@ export const dataService = {
             items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PhotoboothMemory));
           } else {
             items = INITIAL_PHOTOBOOTHS;
-            // Auto seed initial photobooths collection to Firebase Firestore!
             INITIAL_PHOTOBOOTHS.forEach(item => {
               setDoc(doc(db!, 'photobooths', item.id), item).catch(e => {
                 console.warn('Lỗi auto-seed photobooth lên Firebase:', e);
@@ -149,19 +158,19 @@ export const dataService = {
     }
 
     this.getPhotobooths().then(callback);
-    if (typeof window !== 'undefined') {
-      const handleStorage = (e: StorageEvent) => {
-        if (e.key === STORAGE_KEY_PHOTOBOOTHS) {
-          this.getPhotobooths().then(callback);
-        }
-      };
-      window.addEventListener('storage', handleStorage);
-      return () => window.removeEventListener('storage', handleStorage);
-    }
     return () => {};
   },
 
   subscribeCoupons(callback: (coupons: LoveCoupon[]) => void): () => void {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_COUPONS);
+        if (local) callback(JSON.parse(local));
+      } catch (e) {
+        console.warn('Lỗi đọc local coupons cache:', e);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'coupons'));
@@ -171,7 +180,6 @@ export const dataService = {
             items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as LoveCoupon));
           } else {
             items = INITIAL_COUPONS;
-            // Automatically push initial coupons dataset up to Firebase Firestore!
             INITIAL_COUPONS.forEach(coupon => {
               setDoc(doc(db!, 'coupons', coupon.id), coupon).catch(e => {
                 console.warn('Lỗi auto-seed coupon lên Firebase:', e);
@@ -191,19 +199,19 @@ export const dataService = {
     }
 
     this.getCoupons().then(callback);
-    if (typeof window !== 'undefined') {
-      const handleStorage = (e: StorageEvent) => {
-        if (e.key === STORAGE_KEY_COUPONS) {
-          this.getCoupons().then(callback);
-        }
-      };
-      window.addEventListener('storage', handleStorage);
-      return () => window.removeEventListener('storage', handleStorage);
-    }
     return () => {};
   },
 
   subscribeLoveNote(callback: (note: string) => void): () => void {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_NOTE);
+        if (local) callback(local);
+      } catch (e) {
+        console.warn('Lỗi đọc local note cache:', e);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const ref = doc(db, 'settings', 'love_note');
@@ -224,19 +232,19 @@ export const dataService = {
     }
 
     this.getLoveNote().then(callback);
-    if (typeof window !== 'undefined') {
-      const handleStorage = (e: StorageEvent) => {
-        if (e.key === STORAGE_KEY_NOTE) {
-          this.getLoveNote().then(callback);
-        }
-      };
-      window.addEventListener('storage', handleStorage);
-      return () => window.removeEventListener('storage', handleStorage);
-    }
     return () => {};
   },
 
   subscribeMood(callback: (mood: MoodStatus) => void): () => void {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_MOOD);
+        if (local) callback(JSON.parse(local));
+      } catch (e) {
+        console.warn('Lỗi đọc local mood cache:', e);
+      }
+    }
+
     if (isFirebaseConfigured && db) {
       try {
         const ref = doc(db, 'settings', 'mood');
@@ -248,6 +256,7 @@ export const dataService = {
             }
             callback(moodData);
           }
+
         }, (err) => {
           console.warn('Lỗi Firestore subscribeMood:', err);
         });

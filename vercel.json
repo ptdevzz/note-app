@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/ping",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/daily-schedule",
       "schedule": "0 23 * * *"
     }
