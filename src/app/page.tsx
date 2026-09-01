@@ -273,9 +273,12 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
           <div className="w-8 h-8 rounded-full overflow-hidden border border-rose-400/40 shrink-0">
             <img src="/avatar_couple.jpg" alt="Avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
           </div>
-          <div>
+          <div className="flex items-center gap-1.5">
             <span className="text-[10px] bg-rose-500/20 text-rose-300 font-extrabold px-2 py-0.5 rounded-full border border-rose-500/30 inline-block">
               {currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'}
+            </span>
+            <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded-md border border-slate-800">
+              v2.5.0
             </span>
           </div>
         </div>

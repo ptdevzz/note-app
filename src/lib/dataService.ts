@@ -89,44 +89,38 @@ export const dataService = {
   // --- REALTIME SUBSCRIBERS ---
 
   subscribePlaces(callback: (places: PlaceItem[]) => void): () => void {
-    let hasHydrated = false;
+    let hasReturned = false;
 
+    const safeCallback = (items: PlaceItem[]) => {
+      hasReturned = true;
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEY_PLACES, JSON.stringify(items)); } catch {}
+      }
+      callback(items);
+    };
+
+    // 1. Nạp từ Cache local trước
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_PLACES);
-        if (local) {
-          callback(JSON.parse(local));
-          hasHydrated = true;
-        }
-      } catch (e) {
-        console.warn('Lỗi đọc local places:', e);
-      }
+        if (local) safeCallback(JSON.parse(local));
+      } catch {}
     }
 
-    // Nếu điện thoại chưa có cache -> Fetch HTTP tức thì trong 0.2s để không bị treo giao diện
-    if (!hasHydrated) {
-      this.getPlaces().then(items => {
-        if (items && items.length > 0) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY_PLACES, JSON.stringify(items));
-          }
-          callback(items);
-        }
-      });
-    }
+    // 2. Chủ động gọi HTTP getPlaces() cho PWA Standalone (0.1s)
+    this.getPlaces().then(items => {
+      if (items && items.length > 0) safeCallback(items);
+    });
 
+    // 3. Đăng ký Realtime Snapshot (song song)
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'places'), orderBy('createdAt', 'desc'));
         return onSnapshot(q, (snap) => {
           const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PlaceItem));
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY_PLACES, JSON.stringify(items));
-          }
-          callback(items);
+          safeCallback(items);
         }, (err) => {
           console.warn('Lỗi Firestore subscribePlaces:', err);
-          this.getPlaces().then(callback);
         });
       } catch (err) {
         console.warn('Không thể đăng ký Firestore subscribePlaces:', err);
@@ -137,16 +131,23 @@ export const dataService = {
   },
 
   subscribePhotobooths(callback: (photobooths: PhotoboothMemory[]) => void): () => void {
+    const safeCallback = (items: PhotoboothMemory[]) => {
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEY_PHOTOBOOTHS, JSON.stringify(items)); } catch {}
+      }
+      callback(items);
+    };
+
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_PHOTOBOOTHS);
-        callback(local ? JSON.parse(local) : INITIAL_PHOTOBOOTHS);
-      } catch (e) {
-        callback(INITIAL_PHOTOBOOTHS);
-      }
-    } else {
-      callback(INITIAL_PHOTOBOOTHS);
-    }
+        safeCallback(local ? JSON.parse(local) : INITIAL_PHOTOBOOTHS);
+      } catch { safeCallback(INITIAL_PHOTOBOOTHS); }
+    } else { safeCallback(INITIAL_PHOTOBOOTHS); }
+
+    this.getPhotobooths().then(items => {
+      if (items && items.length > 0) safeCallback(items);
+    });
 
     if (isFirebaseConfigured && db) {
       try {
@@ -157,16 +158,8 @@ export const dataService = {
             items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PhotoboothMemory));
           } else {
             items = INITIAL_PHOTOBOOTHS;
-            INITIAL_PHOTOBOOTHS.forEach(item => {
-              setDoc(doc(db!, 'photobooths', item.id), item).catch(e => {
-                console.warn('Lỗi auto-seed photobooth lên Firebase:', e);
-              });
-            });
           }
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY_PHOTOBOOTHS, JSON.stringify(items));
-          }
-          callback(items);
+          safeCallback(items);
         }, (err) => {
           console.warn('Lỗi Firestore subscribePhotobooths:', err);
         });
@@ -179,16 +172,23 @@ export const dataService = {
   },
 
   subscribeCoupons(callback: (coupons: LoveCoupon[]) => void): () => void {
+    const safeCallback = (items: LoveCoupon[]) => {
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEY_COUPONS, JSON.stringify(items)); } catch {}
+      }
+      callback(items);
+    };
+
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_COUPONS);
-        callback(local ? JSON.parse(local) : INITIAL_COUPONS);
-      } catch (e) {
-        callback(INITIAL_COUPONS);
-      }
-    } else {
-      callback(INITIAL_COUPONS);
-    }
+        safeCallback(local ? JSON.parse(local) : INITIAL_COUPONS);
+      } catch { safeCallback(INITIAL_COUPONS); }
+    } else { safeCallback(INITIAL_COUPONS); }
+
+    this.getCoupons().then(items => {
+      if (items && items.length > 0) safeCallback(items);
+    });
 
     if (isFirebaseConfigured && db) {
       try {
@@ -199,16 +199,8 @@ export const dataService = {
             items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as LoveCoupon));
           } else {
             items = INITIAL_COUPONS;
-            INITIAL_COUPONS.forEach(coupon => {
-              setDoc(doc(db!, 'coupons', coupon.id), coupon).catch(e => {
-                console.warn('Lỗi auto-seed coupon lên Firebase:', e);
-              });
-            });
           }
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_KEY_COUPONS, JSON.stringify(items));
-          }
-          callback(items);
+          safeCallback(items);
         }, (err) => {
           console.warn('Lỗi Firestore subscribeCoupons:', err);
         });
@@ -222,27 +214,30 @@ export const dataService = {
 
   subscribeLoveNote(callback: (note: string) => void): () => void {
     const defaultNote = 'Anh yêu em nhiều lắm! 💕';
+    const safeCallback = (note: string) => {
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem(STORAGE_KEY_NOTE, note); } catch {}
+      }
+      callback(note);
+    };
+
     if (typeof window !== 'undefined') {
       try {
         const local = localStorage.getItem(STORAGE_KEY_NOTE);
-        callback(local || defaultNote);
-      } catch (e) {
-        callback(defaultNote);
-      }
-    } else {
-      callback(defaultNote);
-    }
+        safeCallback(local || defaultNote);
+      } catch { safeCallback(defaultNote); }
+    } else { safeCallback(defaultNote); }
+
+    this.getLoveNote().then(note => {
+      if (note) safeCallback(note);
+    });
 
     if (isFirebaseConfigured && db) {
       try {
         const ref = doc(db, 'settings', 'love_note');
         return onSnapshot(ref, (snap) => {
           if (snap.exists() && snap.data()?.content) {
-            const note = snap.data().content;
-            if (typeof window !== 'undefined') {
-              localStorage.setItem(STORAGE_KEY_NOTE, note);
-            }
-            callback(note);
+            safeCallback(snap.data().content);
           }
         }, (err) => {
           console.warn('Lỗi Firestore subscribeLoveNote:', err);
