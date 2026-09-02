@@ -14,7 +14,6 @@ export async function GET(request: Request) {
     const results: any[] = [];
     const seenIds = new Set<string>();
 
-    // 1. Tìm kiếm YouTube Music Full Track (100% Nguyên bài 3-5 phút, Không giới hạn 30s)
     try {
       const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query + ' lyric video')}`;
       const ytRes = await fetch(ytUrl, {
@@ -47,6 +46,11 @@ export async function GET(request: Request) {
             });
           }
         }
+      }
+    } catch (e) {
+      console.warn('Lỗi fetch Youtube:', e);
+    }
+
     return NextResponse.json({ results });
   } catch (err) {
     console.warn('Lỗi music search backend:', err);
