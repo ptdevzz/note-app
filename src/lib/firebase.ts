@@ -18,8 +18,11 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+import { getStorage, FirebaseStorage } from 'firebase/storage';
+
 let db: Firestore | null = null;
 let auth: Auth | null = null;
+let storage: FirebaseStorage | null = null;
 
 export const isFirebaseConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 
@@ -34,11 +37,12 @@ if (isFirebaseConfigured) {
       db = getFirestore(app);
     }
     auth = getAuth(app);
+    storage = getStorage(app);
   } catch (error) {
     console.warn('Cấu hình Firebase chưa đầy đủ, chuyển sang chế độ Mock Storage.', error);
   }
 }
 
-export { db, auth };
+export { db, auth, storage };
 
 

@@ -92,18 +92,24 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
   const currentWeekDates = getWeekDates(selectedWeek);
 
   const isSubjectActiveInWeek = (sub: TimetableSubject, weekNum: number) => {
-    const weekStart = new Date(semesterStart);
-    weekStart.setDate(weekStart.getDate() + (weekNum - 1) * 7);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-    const subStart = parseDate(sub.startDate);
-    const subEnd = parseDate(sub.endDate);
-    if (!subStart || !subEnd) return true;
-    return subStart <= weekEnd && subEnd >= weekStart;
+    if (!sub || !timetable?.startDate) return true;
+    try {
+      const weekStart = new Date(semesterStart);
+      weekStart.setDate(weekStart.getDate() + (weekNum - 1) * 7);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const subStart = parseDate(sub.startDate);
+      const subEnd = parseDate(sub.endDate);
+      if (!subStart || !subEnd) return true;
+      return subStart <= weekEnd && subEnd >= weekStart;
+    } catch (e) {
+      return true;
+    }
   };
 
   // Kiểm tra môn có học vào ngày cụ thể hay không (Lọc theo selectedGroup)
   const getSubjectsForDate = (targetDate: Date) => {
+    if (!targetDate || !timetable?.subjects) return [];
     const jsDay = targetDate.getDay();
     const targetDow = jsDay === 0 ? 8 : jsDay + 1;
     if (targetDow > 7) return [];
@@ -116,30 +122,36 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
       group: string;
     }[] = [];
 
-    timetable.subjects.forEach((sub) => {
-      const subStart = parseDate(sub.startDate);
-      const subEnd = parseDate(sub.endDate);
-      if (subStart && subEnd) {
-        const tDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-        const sStart = new Date(subStart.getFullYear(), subStart.getMonth(), subStart.getDate());
-        const sEnd = new Date(subEnd.getFullYear(), subEnd.getMonth(), subEnd.getDate());
-        if (tDate < sStart || tDate > sEnd) return;
-      }
-      sub.schedules.forEach((sch) => {
-        if (sch.dayOfWeek === targetDow) {
-          // Lọc theo nhóm: chỉ lấy nhóm trùng khớp hoặc nhóm ALL
-          if (sch.group === 'ALL' || sch.group === selectedGroup) {
-            items.push({
-              subject: sub,
-              session: sch.session,
-              lessons: sch.lessons,
-              room: sch.room,
-              group: sch.group,
-            });
-          }
+    try {
+      timetable.subjects.forEach((sub) => {
+        if (!sub) return;
+        const subStart = parseDate(sub.startDate);
+        const subEnd = parseDate(sub.endDate);
+        if (subStart && subEnd) {
+          const tDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+          const sStart = new Date(subStart.getFullYear(), subStart.getMonth(), subStart.getDate());
+          const sEnd = new Date(subEnd.getFullYear(), subEnd.getMonth(), subEnd.getDate());
+          if (tDate < sStart || tDate > sEnd) return;
+        }
+        if (Array.isArray(sub.schedules)) {
+          sub.schedules.forEach((sch) => {
+            if (sch.dayOfWeek === targetDow) {
+              if (sch.group === 'ALL' || sch.group === selectedGroup) {
+                items.push({
+                  subject: sub,
+                  session: sch.session,
+                  lessons: sch.lessons,
+                  room: sch.room,
+                  group: sch.group,
+                });
+              }
+            }
+          });
         }
       });
-    });
+    } catch (e) {
+      console.warn('Lỗi getSubjectsForDate:', e);
+    }
 
     return items;
   };
@@ -192,7 +204,6 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
   const diffDaysToday = Math.floor(diffTimeToday / (1000 * 3600 * 24));
   const currentActualWeek = Math.floor(diffDaysToday / 7) + 1;
 
-  // ⚡ FIX BUG: Lịch học hôm nay phải lọc chính xác theo tuần thực tế hiện tại (currentActualWeek)
   const getTodayActualSubjects = () => {
     const items: {
       dayOfWeek: number;
@@ -354,20 +365,22 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
             {/* Header Tháng & Nút Chuyển Tháng */}
             <div className="flex items-center justify-between mb-3 px-1">
               <h3 className="text-sm font-extrabold text-white flex items-center gap-1">
-                tháng {currentMonthDate.getMonth() + 1}, {currentMonthDate.getFullYear()}
+                Tháng {currentMonthDate.getMonth() + 1}, {currentMonthDate.getFullYear()}
               </h3>
-              <div className="flex gap-1">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setCurrentMonthDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-                  className="p-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"
+                  className="p-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-rose-300 border border-slate-700/60 transition flex items-center justify-center"
+                  title="Tháng trước"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setCurrentMonthDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-                  className="p-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition"
+                  className="p-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 rounded-xl text-rose-300 border border-slate-700/60 transition flex items-center justify-center"
+                  title="Tháng sau"
                 >
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             </div>

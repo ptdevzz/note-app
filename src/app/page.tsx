@@ -28,7 +28,7 @@ import { getWeekendForWeekOffset, calculateLoveDays, formatDateTime } from '@/li
 import confetti from 'canvas-confetti';
 import { 
   Plus, Search, Sparkles, MapPin, ExternalLink, Calendar as CalendarIcon, CheckCircle2, 
-  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2, LogOut, Bell, Music, Gift
+  Smile, Flame, Dices, Trash2, ChevronLeft, ChevronRight, Navigation, BellRing, Share2, LogOut, Bell, Music, Gift, GraduationCap
 } from 'lucide-react';
 
 function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; onLogout: () => void }) {
@@ -38,6 +38,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
   const [photobooths, setPhotobooths] = useState<PhotoboothMemory[]>([]);
   const [loveNote, setLoveNote] = useState('');
   const [mood, setMood] = useState<MoodStatus>({ emoji: '🥰', label: 'Vui vẻ', updatedAt: 'Hôm nay', by: 'Bé Yêu' });
+  const [timetableData] = useState<TimetableData>(defaultScheduleData as TimetableData);
   const [timetable, setTimetable] = useState<TimetableData>(defaultScheduleData as unknown as TimetableData);
   const [isPlacesLoading, setIsPlacesLoading] = useState(true);
   const [isCouponsLoading, setIsCouponsLoading] = useState(true);
@@ -282,7 +283,7 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
               {currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙'}
             </span>
             <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded-md border border-slate-800">
-              v2.5.6
+              v3.0.0
             </span>
           </div>
         </div>
@@ -349,11 +350,74 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
           </div>
         ) : (
           <div className="space-y-4 pb-4 animate-in fade-in duration-200">
-          {/* Interactive Love Widget */}
-          <PokeLoveEffect
-            currentRole={currentRole}
-            partnerName={currentRole === 'GF' ? (localStorage.getItem('admin_partner1') || 'Bạn Trai') : (localStorage.getItem('admin_partner2') || 'Bạn Gái')}
-          />
+          {/* Lịch Đi Học Hôm Nay Widget */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <GraduationCap className="w-4 h-4 text-rose-400" />
+                <h3 className="text-xs font-bold text-slate-200">Lịch Học Hôm Nay Của Bé</h3>
+              </div>
+              <span className="text-[10px] text-rose-400 font-bold">26CĐTT2</span>
+            </div>
+
+            {/* Tính toán môn học hôm nay chính xác theo ngày thực tế */}
+            {(() => {
+              const todayDate = new Date();
+              const jsDay = todayDate.getDay();
+              const currentDow = jsDay === 0 ? 8 : jsDay + 1;
+
+              const parseDate = (dStr: string) => {
+                const [d, m, y] = dStr.split('/').map(Number);
+                return new Date(y, m - 1, d);
+              };
+
+              const todaySubjects: any[] = [];
+              const tDate = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+
+              timetableData.subjects.forEach(sub => {
+                const subStart = parseDate(sub.startDate);
+                const subEnd = parseDate(sub.endDate);
+                if (subStart && subEnd) {
+                  const sStart = new Date(subStart.getFullYear(), subStart.getMonth(), subStart.getDate());
+                  const sEnd = new Date(subEnd.getFullYear(), subEnd.getMonth(), subEnd.getDate());
+                  if (tDate < sStart || tDate > sEnd) return;
+                }
+                sub.schedules.forEach(sch => {
+                  if (sch.dayOfWeek === currentDow) {
+                    todaySubjects.push({ ...sch, subject: sub });
+                  }
+                });
+              });
+
+              if (todaySubjects.length === 0) {
+                return (
+                  <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80 text-center">
+                    <p className="text-xs font-bold text-emerald-400">Hôm nay bé không có lịch học 🎉</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Dành thời gian nghỉ ngơi thư giãn nhen.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2">
+                  {todaySubjects.map((item, idx) => (
+                    <div key={idx} className="bg-slate-950 p-3 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${item.session === 'morning' ? 'bg-amber-500/20 text-amber-300' : 'bg-indigo-500/20 text-indigo-300'}`}>
+                            {item.session === 'morning' ? 'Sáng (7h15-11h15)' : 'Chiều (12h30-16h30)'}
+                          </span>
+                          <span className="text-[10px] font-mono text-rose-300 font-bold">Tiết {item.lessons}</span>
+                        </div>
+                        <h4 className="text-xs font-extrabold text-white">{item.subject.name}</h4>
+                        {item.room && <span className="text-[10px] text-slate-400 block mt-0.5">Phòng: <strong className="text-rose-400">{item.room}</strong></span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
 
           {/* Realtime Weekend Date Countdown Clock */}
           <WeekendCountdownWidget
@@ -388,25 +452,32 @@ function MainAppContent({ defaultRole, onLogout }: { defaultRole: 'GF' | 'BF'; o
               </div>
             </div>
 
-            <div className="text-[11px] text-slate-400 mb-2 font-medium">Bạn muốn cập nhật tâm trạng?</div>
-            <div className="flex justify-between gap-1.5">
+            <div className="text-[11px] text-slate-400 mb-2 font-medium">Chọn nhanh tâm trạng của bạn:</div>
+            <div className="grid grid-cols-5 gap-1.5">
               {[
                 { emoji: '🥰', label: 'Yêu đời' },
                 { emoji: '🤤', label: 'Thèm trà sữa' },
                 { emoji: '😾', label: 'Đang dỗi' },
-                { emoji: '😴', label: 'Lười lười' },
-                { emoji: '🥳', label: 'Muốn đi chơi' },
+                { emoji: '😴', label: 'Buồn ngủ' },
+                { emoji: '🥳', label: 'Hào hứng' },
+                { emoji: '🥺', label: 'Cần ôm' },
+                { emoji: '🤒', label: 'Hơi mệt' },
+                { emoji: '💖', label: 'Nhớ bạn' },
+                { emoji: '🍕', label: 'Muốn ăn ngon' },
+                { emoji: '☕', label: 'Chill chill' },
               ].map((m) => (
                 <button
                   key={m.label}
                   onClick={() => handleMoodSelect(m.emoji, m.label)}
-                  className={`flex-1 p-2 rounded-xl border text-center transition-transform active:scale-95 ${
+                  className={`p-2 rounded-xl border text-center transition-all active:scale-95 flex flex-col items-center justify-center ${
                     mood.label === m.label
-                      ? 'bg-rose-500/20 border-rose-500 text-rose-200 font-bold'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-rose-500/25 border-rose-500 text-rose-200 font-bold shadow-md shadow-rose-500/20 scale-105'
+                      : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
                   }`}
+                  title={m.label}
                 >
-                  <div className="text-lg">{m.emoji}</div>
+                  <div className="text-xl mb-0.5">{m.emoji}</div>
+                  <span className="text-[9px] truncate w-full block">{m.label}</span>
                 </button>
               ))}
             </div>

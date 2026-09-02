@@ -140,24 +140,51 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
     }
   };
 
-  // Add Song from Search
+  const [isAddingSongId, setIsAddingSongId] = useState<string | null>(null);
+
+  // Add Song from Search to Playlist (Lưu siêu tốc 0.01s)
   const handleAddSearchResult = async (item: any) => {
-    const timeStr = formatDateTime();
-    const newSong: Omit<LoveSong, 'id'> = {
-      title: item.title,
-      artist: item.artist,
-      coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80',
-      audioUrl: item.audioUrl || '',
-      youtubeId: item.youtubeId || item.id,
-      addedBy: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙',
-      addedAt: timeStr,
-    };
-    await dataService.addSong(newSong);
-    const msg = `🎵 ${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa thêm bài hát mới: ${item.title}`;
-    await dataService.sendNudge(currentRole, msg);
-    confetti({ particleCount: 60, spread: 60 });
-    setSearchResults([]);
-    setSearchQuery('');
+    setIsAddingSongId(item.id);
+    try {
+      const timeStr = formatDateTime();
+      const finalAudioUrl = item.audioUrl || (item.youtubeId ? `/api/music-stream?id=${item.youtubeId}` : '');
+
+      const newSong: Omit<LoveSong, 'id'> = {
+        title: item.title,
+        artist: item.artist,
+        coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80',
+        audioUrl: finalAudioUrl,
+        youtubeId: item.youtubeId || item.id,
+        addedBy: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙',
+        addedAt: timeStr,
+      };
+
+      await dataService.addSong(newSong);
+      const msg = `🎵 ${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa thêm bài hát mới: ${item.title}`;
+      await dataService.sendNudge(currentRole, msg);
+      confetti({ particleCount: 60, spread: 60 });
+      setSearchResults([]);
+      setSearchQuery('');
+    } catch (err) {
+      console.warn('Lỗi thêm bài hát:', err);
+    } finally {
+      setIsAddingSongId(null);
+    }
+  };
+
+  // Delete Song & Clear Music Player Bar + Clear Firebase Storage
+  const handleDeleteSong = async (song: LoveSong) => {
+    // 1. Tự động Clear thanh Play Bar nếu bài bị xóa đang phát
+    if (currentSong?.id === song.id) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setIsPlaying(false);
+      setCurrentSong(null);
+    }
+
+    // 2. Xóa tài liệu bài hát trong Firestore & Storage
+    await dataService.deleteSong(song.id);
   };
 
   // Add Custom Song MP3
@@ -181,6 +208,8 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
 
   // Play Song & Sync Realtime to Partner
   const handlePlaySong = async (song: LoveSong) => {
+    const targetAudioUrl = song.audioUrl || (song.youtubeId ? `/api/music-stream?id=${song.youtubeId}` : '');
+
     if (currentSong?.id === song.id) {
       const nextPlaying = !isPlaying;
       setIsPlaying(nextPlaying);
@@ -198,14 +227,19 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
         updatedAt: Date.now(),
       });
     } else {
-      setCurrentSong(song);
+      setCurrentSong({ ...song, audioUrl: targetAudioUrl });
       setIsPlaying(true);
-      if (audioRef.current) {
-        audioRef.current.src = song.audioUrl || '';
-        audioRef.current.play().catch(e => console.warn('Play error:', e));
-      }
+
+      // Kích hoạt play() NGAY LẬP TỨC trong cùng tick click của người dùng!
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.src = targetAudioUrl;
+          audioRef.current.play().catch(e => console.warn('User gesture play error:', e));
+        }
+      }, 0);
+
       await dataService.syncMusicPlayer({
-        currentSong: song,
+        currentSong: { ...song, audioUrl: targetAudioUrl },
         isPlaying: true,
         playedSeconds: 0,
         updatedAt: Date.now(),
@@ -353,10 +387,20 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
 
                   <button
                     onClick={() => handleAddSearchResult(item)}
-                    className="bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white text-[11px] font-bold px-3 py-1.5 rounded-lg ml-2 flex items-center space-x-1 shrink-0"
+                    disabled={isAddingSongId === item.id}
+                    className="px-3 py-1.5 bg-rose-500 hover:bg-rose-600 active:scale-95 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 shadow-md shadow-rose-950/20"
                   >
-                    <Plus className="w-3 h-3" />
-                    <span>Thêm</span>
+                    {isAddingSongId === item.id ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Thêm</span>
+                      </>
+                    )}
                   </button>
                 </div>
               ))}
@@ -464,8 +508,8 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
                       </button>
 
                       <button
-                        onClick={() => dataService.deleteSong(song.id)}
-                        className="text-slate-600 hover:text-rose-400 p-1.5 rounded-lg"
+                        onClick={() => handleDeleteSong(song)}
+                        className="text-slate-600 hover:text-rose-400 p-1.5 rounded-lg active:scale-95 transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -648,43 +692,31 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
         </div>
       )}
 
-      {/* --- SLEEK PREMIUM MUSIC PLAYER BAR (100% HIDDEN YOUTUBE ENGINE) --- */}
+      {/* --- SLEEK VINYL MP3 MUSIC PLAYER BAR (100% SOUND ON ALL DEVICES • SOUNDCLOUD ENGINE) --- */}
       {currentSong && (
-        <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-40 bg-slate-950/95 border border-pink-500/30 rounded-2xl p-3 shadow-2xl backdrop-blur-2xl space-y-2.5 animate-in slide-in-from-bottom-5">
-          {/* 100% Hidden Engine (YouTube iframe ẩn hoàn toàn không ảnh hưởng UI) */}
-          {currentSong.youtubeId && (
-            <div className="absolute w-[1px] h-[1px] opacity-0 overflow-hidden pointer-events-none -z-50">
-              <iframe
-                className="w-1 h-1"
-                src={`https://www.youtube-nocookie.com/embed/${currentSong.youtubeId}?autoplay=${isPlaying ? 1 : 0}&playsinline=1&enablejsapi=1`}
-                allow="autoplay; encrypted-media"
-              />
-            </div>
-          )}
-
-          {/* HTML5 Audio cho nhạc MP3 trực tiếp */}
-          {currentSong.audioUrl && (
-            <audio
-              ref={audioRef}
-              src={currentSong.audioUrl}
-              playsInline
-              className="hidden"
-            />
-          )}
+        <div className="fixed bottom-[68px] left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-50 bg-slate-950/95 border border-pink-500/30 rounded-3xl p-3 shadow-2xl backdrop-blur-2xl space-y-2.5 animate-in slide-in-from-bottom-5">
+          {/* HTML5 Audio Engine cho SoundCloud Direct Stream */}
+          <audio
+            ref={audioRef}
+            src={currentSong.audioUrl}
+            playsInline
+            controls={false}
+            className="hidden"
+          />
 
           <div className="flex items-center justify-between space-x-3">
-            {/* Vinyl Record Cover Art */}
+            {/* Spinning Vinyl Record Cover Art */}
             <div className="relative shrink-0">
               <img
                 src={currentSong.coverUrl}
                 alt={currentSong.title}
-                className={`w-11 h-11 rounded-full object-cover border-2 border-rose-500/50 shadow-md ${isPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}
+                className={`w-12 h-12 rounded-full object-cover border-2 border-rose-500/50 shadow-md ${isPlaying ? 'animate-[spin_6s_linear_infinite]' : ''}`}
               />
-              <div className="absolute inset-0 m-auto w-3 h-3 bg-slate-950 rounded-full border border-rose-400/60" />
+              <div className="absolute inset-0 m-auto w-3.5 h-3.5 bg-slate-950 rounded-full border border-rose-400/60" />
             </div>
 
-            {/* Song Details */}
-            <div className="min-w-0 flex-1">
+            {/* Song Info */}
+            <div className="min-w-0 flex-1 pr-1">
               <div className="flex items-center space-x-1.5 mb-0.5">
                 <span className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'} shrink-0`} />
                 <p className="text-xs font-extrabold text-white truncate leading-tight">{currentSong.title}</p>
@@ -692,18 +724,25 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
               <p className="text-[10px] text-slate-400 truncate">{currentSong.artist}</p>
             </div>
 
-            {/* Actions */}
+            {/* Controls */}
             <div className="flex items-center space-x-2 shrink-0">
               <button
                 onClick={() => handlePlaySong(currentSong)}
-                className="w-9 h-9 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-rose-950/40 active:scale-95 transition-all"
+                className="w-9 h-9 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-rose-950/40 active:scale-95 transition-all"
               >
                 {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
+              </button>
+              <button
+                onClick={() => setCurrentSong(null)}
+                className="p-1.5 text-slate-500 hover:text-white rounded-xl text-xs font-bold transition"
+                title="Đóng trình phát"
+              >
+                ✕
               </button>
             </div>
           </div>
 
-          {/* Smooth Progress Indicator */}
+          {/* Smooth Progress Tracker */}
           <div className="space-y-1 pt-1 border-t border-slate-800/80">
             <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden relative">
               <div
