@@ -1,6 +1,7 @@
-import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory, TimetableData, LoveSong, CoupleHobby, SharedMusicState } from './types';
+import { PlaceItem, LoveCoupon, MoodStatus, PhotoboothMemory, TimetableData, LoveSong, CoupleHobby, SharedMusicState, PresenceMap, UserRole } from './types';
 import defaultScheduleData from '../data/schedule_26cdtt2.json';
-import { db, isFirebaseConfigured } from './firebase';
+import { db, storage, isFirebaseConfigured } from './firebase';
+import { ref as storageRef, deleteObject } from 'firebase/storage';
 import { 
   collection, getDocs, getDoc, addDoc, updateDoc, doc, deleteDoc, 
   query, orderBy, setDoc, onSnapshot 
@@ -12,6 +13,7 @@ const STORAGE_KEY_MOOD = 'us_weekends_mood_v4';
 const STORAGE_KEY_COUPONS = 'us_weekends_coupons_v5';
 const STORAGE_KEY_PHOTOBOOTHS = 'us_weekends_photobooths_v2';
 const STORAGE_KEY_TIMETABLE = 'us_weekends_timetable_v1';
+const STORAGE_KEY_PRESENCE = 'us_weekends_presence_v1';
 
 const INITIAL_PLACES: PlaceItem[] = [];
 const INITIAL_PHOTOBOOTHS: PhotoboothMemory[] = [
@@ -712,6 +714,56 @@ export const dataService = {
     return null;
   },
 
+  // --- PRESENCE (LẦN TRUY CẬP CUỐI) API ---
+  subscribePresence(callback: (presence: PresenceMap) => void): () => void {
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_PRESENCE);
+        callback(local ? JSON.parse(local) : {});
+      } catch {
+        callback({});
+      }
+    }
+
+    if (isFirebaseConfigured && db) {
+      try {
+        return onSnapshot(doc(db, 'settings', 'presence'), (snap) => {
+          if (!snap.exists()) return;
+          const presence = snap.data() as PresenceMap;
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY_PRESENCE, JSON.stringify(presence));
+          }
+          callback(presence);
+        }, (err) => {
+          console.warn('Lỗi Firestore subscribePresence:', err);
+        });
+      } catch (e) {
+        console.warn('Lỗi subscribePresence:', e);
+      }
+    }
+    return () => {};
+  },
+
+  async updateLastSeen(role: UserRole): Promise<void> {
+    const entry = { [role]: { lastSeenAt: Date.now() } };
+
+    if (typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY_PRESENCE);
+        const merged = { ...(local ? JSON.parse(local) : {}), ...entry };
+        localStorage.setItem(STORAGE_KEY_PRESENCE, JSON.stringify(merged));
+      } catch (e) {
+        console.warn('Lỗi localStorage updateLastSeen:', e);
+      }
+    }
+
+    if (isFirebaseConfigured && db) {
+      setDoc(doc(db, 'settings', 'presence'), entry, { merge: true }).catch((err) => {
+        console.warn('Lỗi Firestore updateLastSeen:', err);
+      });
+    }
+  },
+
   // --- LOVE SONGS & HOBBIES API ---
   subscribeSongs(callback: (songs: LoveSong[]) => void): () => void {
     if (isFirebaseConfigured && db) {
@@ -738,7 +790,7 @@ export const dataService = {
     return () => {};
   },
 
-  async addSong(song: Omit<LoveSong, 'id'>): Promise<void> {
+  async addSong(song: Omit<LoveSong, 'id'>): Promise<string> {
     const id = Date.now().toString();
     const newSong = { id, ...song };
 
@@ -751,9 +803,27 @@ export const dataService = {
     if (isFirebaseConfigured && db) {
       await setDoc(doc(db, 'songs', id), newSong);
     }
+    return id;
   },
 
-  async deleteSong(id: string): Promise<void> {
+  async updateSong(id: string, patch: Partial<Omit<LoveSong, 'id'>>): Promise<void> {
+    // Firestore không nhận giá trị undefined
+    const cleanPatch = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined));
+
+    if (typeof window !== 'undefined') {
+      const local: LoveSong[] = JSON.parse(localStorage.getItem('usweekends_songs') || '[]');
+      localStorage.setItem(
+        'usweekends_songs',
+        JSON.stringify(local.map((s) => (s.id === id ? { ...s, ...cleanPatch } : s))),
+      );
+    }
+
+    if (isFirebaseConfigured && db) {
+      await setDoc(doc(db, 'songs', id), cleanPatch, { merge: true });
+    }
+  },
+
+  async deleteSong(id: string, storagePath?: string): Promise<void> {
     if (typeof window !== 'undefined') {
       const local = JSON.parse(localStorage.getItem('usweekends_songs') || '[]');
       localStorage.setItem('usweekends_songs', JSON.stringify(local.filter((s: any) => s.id !== id)));
@@ -761,6 +831,13 @@ export const dataService = {
 
     if (isFirebaseConfigured && db) {
       await deleteDoc(doc(db, 'songs', id));
+    }
+
+    // Xóa luôn file audio đã cache trên Storage (best effort)
+    if (storagePath && storage) {
+      deleteObject(storageRef(storage, storagePath)).catch((err) => {
+        console.warn('Lỗi xóa file audio trên Storage:', err);
+      });
     }
   },
 

@@ -36,3 +36,6 @@ next-env.d.ts
 
 # zip outputs
 *.zip
+
+# build song song voi dev server (NEXT_DIST_DIR)
+/.next-build/

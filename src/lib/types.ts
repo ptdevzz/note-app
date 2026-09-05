@@ -59,6 +59,8 @@ export interface MoodStatus {
   by: string;
 }
 
+export type SongCacheStatus = 'pending' | 'ready' | 'failed';
+
 export interface LoveSong {
   id: string;
   title: string;
@@ -66,6 +68,11 @@ export interface LoveSong {
   coverUrl: string;
   audioUrl?: string;
   youtubeId?: string;
+  /** Đường dẫn file audio trên Firebase Storage (đã cache offline) */
+  storagePath?: string;
+  /** Trạng thái tải audio về Storage */
+  cacheStatus?: SongCacheStatus;
+  durationSeconds?: number;
   addedBy: string;
   addedAt: string;
 }
@@ -127,3 +134,16 @@ export interface TimetableData {
   notes: string[];
   subjects: TimetableSubject[];
 }
+
+export type UserRole = 'GF' | 'BF';
+
+/** Dữ liệu tối thiểu để tạo địa điểm mới (từ TikTokAddModal / ClipboardAutoDetectBanner) */
+export type NewPlaceInput = Pick<PlaceItem, 'tiktokUrl' | 'title' | 'thumbnail' | 'authorName' | 'category' | 'tags'> &
+  Partial<Pick<PlaceItem, 'createdBy' | 'status' | 'coupleId'>>;
+
+/** Lần truy cập cuối của từng tài khoản (timestamp ms) */
+export interface PresenceStatus {
+  lastSeenAt: number;
+}
+
+export type PresenceMap = Partial<Record<UserRole, PresenceStatus>>;

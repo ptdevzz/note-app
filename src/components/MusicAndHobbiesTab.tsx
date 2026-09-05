@@ -7,7 +7,8 @@ import { formatDateTime } from '@/lib/dateUtils';
 import { 
   Music, Heart, Plus, Search, Play, Pause, Trash2, 
   Sparkles, Gamepad2, Dumbbell, Utensils, Scissors, ExternalLink,
-  Radio, Video, Volume2, VolumeX, Youtube, Loader2
+  Radio, Video, Volume2, VolumeX, Youtube, Loader2,
+  Cloud, CloudDownload, AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -141,35 +142,118 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
   };
 
   const [isAddingSongId, setIsAddingSongId] = useState<string | null>(null);
+  // Các bài đang được máy này tải về Storage
+  const [cachingSongIds, setCachingSongIds] = useState<string[]>([]);
 
-  // Add Song from Search to Playlist (Lưu siêu tốc 0.01s)
+  /**
+   * Tải audio về Firebase Storage qua /api/music-cache rồi cập nhật audioUrl của bài.
+   * Sau bước này bài hát phát như mp3 tĩnh: tua được, chạy nền, không phụ thuộc mirror YouTube.
+   */
+  const cacheSongOffline = async (songId: string, youtubeId: string) => {
+    if (cachingSongIds.includes(songId)) return;
+    setCachingSongIds((prev) => [...prev, songId]);
+    try {
+      await dataService.updateSong(songId, { cacheStatus: 'pending' });
+      const res = await fetch('/api/music-cache', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtubeId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.audioUrl) {
+        throw new Error(data.error || 'Không tải được audio');
+      }
+      await dataService.updateSong(songId, {
+        audioUrl: data.audioUrl,
+        storagePath: data.storagePath,
+        cacheStatus: 'ready',
+        durationSeconds: typeof data.durationSeconds === 'number' ? data.durationSeconds : undefined,
+      });
+    } catch (err) {
+      console.warn('Lỗi cache bài hát:', err);
+      await dataService.updateSong(songId, { cacheStatus: 'failed' }).catch(() => {});
+    } finally {
+      setCachingSongIds((prev) => prev.filter((id) => id !== songId));
+    }
+  };
+
+  // Add Song from Search to Playlist (lưu ngay, tải audio về Storage chạy nền)
   const handleAddSearchResult = async (item: any) => {
     setIsAddingSongId(item.id);
     try {
       const timeStr = formatDateTime();
-      const finalAudioUrl = item.audioUrl || (item.youtubeId ? `/api/music-stream?id=${item.youtubeId}` : '');
+      const youtubeId: string = item.youtubeId || item.id;
+      // Link stream tạm để nghe ngay trong lúc chờ tải về Storage
+      const fallbackAudioUrl = item.audioUrl || (youtubeId ? `/api/music-stream?id=${youtubeId}` : '');
 
       const newSong: Omit<LoveSong, 'id'> = {
         title: item.title,
         artist: item.artist,
         coverUrl: item.coverUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80',
-        audioUrl: finalAudioUrl,
-        youtubeId: item.youtubeId || item.id,
+        audioUrl: fallbackAudioUrl,
+        youtubeId,
+        cacheStatus: 'pending',
         addedBy: currentRole === 'GF' ? 'Bé Yêu 🎀' : 'Anh Iu 💙',
         addedAt: timeStr,
       };
 
-      await dataService.addSong(newSong);
+      const songId = await dataService.addSong(newSong);
       const msg = `🎵 ${currentRole === 'GF' ? 'Bé Yêu' : 'Anh Iu'} vừa thêm bài hát mới: ${item.title}`;
       await dataService.sendNudge(currentRole, msg);
       confetti({ particleCount: 60, spread: 60 });
       setSearchResults([]);
       setSearchQuery('');
+
+      // Không await: để UI mở khóa, việc tải chạy nền và badge tự cập nhật realtime
+      void cacheSongOffline(songId, youtubeId);
     } catch (err) {
       console.warn('Lỗi thêm bài hát:', err);
     } finally {
       setIsAddingSongId(null);
     }
+  };
+
+  /** Badge trạng thái cache offline của một bài trong playlist */
+  const renderCacheBadge = (song: LoveSong) => {
+    const isCachingHere = cachingSongIds.includes(song.id);
+    const isReady = song.cacheStatus === 'ready' || Boolean(song.storagePath);
+
+    if (isReady) {
+      return (
+        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-400">
+          <Cloud className="w-3 h-3" />
+          Đã lưu offline
+        </span>
+      );
+    }
+
+    if (!song.youtubeId) return null;
+
+    if (isCachingHere || song.cacheStatus === 'pending') {
+      return (
+        <button
+          onClick={() => !isCachingHere && cacheSongOffline(song.id, song.youtubeId!)}
+          disabled={isCachingHere}
+          title={isCachingHere ? 'Đang tải về Storage' : 'Bấm để tải lại nếu bị treo'}
+          className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-300 disabled:cursor-default"
+        >
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Đang tải về...
+        </button>
+      );
+    }
+
+    const failed = song.cacheStatus === 'failed';
+    return (
+      <button
+        onClick={() => cacheSongOffline(song.id, song.youtubeId!)}
+        className={`inline-flex items-center gap-1 text-[9px] font-bold hover:underline ${failed ? 'text-rose-400' : 'text-sky-300'}`}
+        title={failed ? 'Tải về thất bại, bấm để thử lại' : 'Tải audio về Storage để nghe full & chạy nền'}
+      >
+        {failed ? <AlertTriangle className="w-3 h-3" /> : <CloudDownload className="w-3 h-3" />}
+        {failed ? 'Lỗi tải, thử lại' : 'Tải về offline'}
+      </button>
+    );
   };
 
   // Delete Song & Clear Music Player Bar + Clear Firebase Storage
@@ -183,8 +267,8 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
       setCurrentSong(null);
     }
 
-    // 2. Xóa tài liệu bài hát trong Firestore & Storage
-    await dataService.deleteSong(song.id);
+    // 2. Xóa tài liệu bài hát trong Firestore & file audio đã cache trên Storage
+    await dataService.deleteSong(song.id, song.storagePath);
   };
 
   // Add Custom Song MP3
@@ -491,7 +575,10 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
                           {song.title}
                         </h4>
                         <p className="text-[10px] text-slate-400 truncate">{song.artist}</p>
-                        <p className="text-[9px] text-slate-500 mt-0.5">Bởi {song.addedBy}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[9px] text-slate-500">Bởi {song.addedBy}</p>
+                          {renderCacheBadge(song)}
+                        </div>
                       </div>
                     </div>
 
