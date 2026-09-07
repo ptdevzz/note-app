@@ -279,7 +279,7 @@ export default function TimetableTab({ timetable, onUpdateTimetable, currentRole
               <span className="text-slate-400 text-xs font-medium">{timetable.semester}</span>
             </div>
             <h2 className="text-lg font-extrabold text-white flex items-center gap-1.5 tracking-tight">
-              Thời Khóa Biểu
+              Lịch Học
             </h2>
           </div>
           <div className="flex items-center gap-1.5">

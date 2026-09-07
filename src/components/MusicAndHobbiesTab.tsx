@@ -336,13 +336,26 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
     e.preventDefault();
     if (!hobbyTitle.trim()) return;
     const timeStr = formatDateTime();
+
+    const mediaTrimmed = hobbyMediaUrl.trim();
+    let isVideo = false;
+    let isImage = false;
+
+    if (mediaTrimmed) {
+      if (mediaTrimmed.includes('youtube') || mediaTrimmed.includes('youtu.be') || mediaTrimmed.includes('tiktok') || mediaTrimmed.endsWith('.mp4')) {
+        isVideo = true;
+      } else {
+        isImage = true;
+      }
+    }
+
     await dataService.addHobby({
       owner: currentRole,
       category: hobbyCategory,
       title: hobbyTitle,
       description: hobbyDesc,
-      imageUrl: hobbyMediaUrl.includes('.jpg') || hobbyMediaUrl.includes('.png') || hobbyMediaUrl.includes('data:image') ? hobbyMediaUrl : undefined,
-      videoUrl: hobbyMediaUrl.includes('youtube') || hobbyMediaUrl.includes('tiktok') || hobbyMediaUrl.includes('.mp4') ? hobbyMediaUrl : undefined,
+      imageUrl: isImage ? mediaTrimmed : undefined,
+      videoUrl: isVideo ? mediaTrimmed : undefined,
       addedAt: timeStr,
     });
 
@@ -703,7 +716,7 @@ export default function MusicAndHobbiesTab({ currentRole }: MusicAndHobbiesTabPr
               />
 
               <input
-                type="url"
+                type="text"
                 placeholder="Link ảnh / Video minh họa (tùy chọn)"
                 value={hobbyMediaUrl}
                 onChange={(e) => setHobbyMediaUrl(e.target.value)}

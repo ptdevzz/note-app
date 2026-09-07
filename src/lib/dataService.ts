@@ -147,10 +147,6 @@ export const dataService = {
       } catch { safeCallback(INITIAL_PHOTOBOOTHS); }
     } else { safeCallback(INITIAL_PHOTOBOOTHS); }
 
-    this.getPhotobooths().then(items => {
-      if (items && items.length > 0) safeCallback(items);
-    });
-
     if (isFirebaseConfigured && db) {
       try {
         const q = query(collection(db, 'photobooths'));
@@ -187,10 +183,6 @@ export const dataService = {
         safeCallback(local ? JSON.parse(local) : INITIAL_COUPONS);
       } catch { safeCallback(INITIAL_COUPONS); }
     } else { safeCallback(INITIAL_COUPONS); }
-
-    this.getCoupons().then(items => {
-      if (items && items.length > 0) safeCallback(items);
-    });
 
     if (isFirebaseConfigured && db) {
       try {
@@ -229,10 +221,6 @@ export const dataService = {
         safeCallback(local || defaultNote);
       } catch { safeCallback(defaultNote); }
     } else { safeCallback(defaultNote); }
-
-    this.getLoveNote().then(note => {
-      if (note) safeCallback(note);
-    });
 
     if (isFirebaseConfigured && db) {
       try {
@@ -285,11 +273,11 @@ export const dataService = {
       }
     }
 
-    this.getMood().then(callback);
     if (typeof window !== 'undefined') {
       const handleStorage = (e: StorageEvent) => {
         if (e.key === STORAGE_KEY_MOOD) {
-          this.getMood().then(callback);
+          const local = localStorage.getItem(STORAGE_KEY_MOOD);
+          if (local) callback(JSON.parse(local));
         }
       };
       window.addEventListener('storage', handleStorage);
@@ -671,18 +659,22 @@ export const dataService = {
 
     // Tự động gọi API Web Push Server-to-Device để gửi tin nhắn ngay cả khi máy đối phương TẮT APP
     const targetRole = from === 'GF' ? 'BF' : 'GF';
-    fetch('/api/send-push', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        targetRole,
-        title: '💕 Sổ Tay Tình Yêu',
-        body: message,
-        url: '/'
-      })
-    }).catch(e => {
-      console.warn('Lỗi gọi API /api/send-push:', e);
-    });
+    try {
+      const res = await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetRole,
+          title: '💕 Sổ Tay Tình Yêu',
+          body: message,
+          url: '/'
+        })
+      });
+      const data = await res.json();
+      console.log('[sendNudge] Kết quả push:', data);
+    } catch (e) {
+      console.warn('[sendNudge] Lỗi gọi API /api/send-push:', e);
+    }
   },
 
   // --- ADMIN CONFIG REALTIME API ---

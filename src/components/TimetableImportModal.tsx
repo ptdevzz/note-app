@@ -55,7 +55,7 @@ export default function TimetableImportModal({ isOpen, onClose, onSuccess }: Tim
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/30"><Upload className="w-5 h-5" /></div>
           <div>
-            <h3 className="text-lg font-bold text-slate-100">Import Thời Khóa Biểu Mới</h3>
+            <h3 className="text-lg font-bold text-slate-100">Import Lịch Học Mới</h3>
             <p className="text-xs text-slate-400">Nạp dữ liệu TKB cho học kỳ mới (HK2, HK3...)</p>
           </div>
         </div>

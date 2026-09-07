@@ -48,7 +48,7 @@ export default function TimetableExportModal({ isOpen, onClose, timetable, selec
     ctx.fillStyle = '#fb7185';
     ctx.font = 'bold 28px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('THỜI KHÓA BIỂU HỌC KỲ I', width / 2, 50);
+    ctx.fillText('LỊCH HỌC HỌC KỲ I', width / 2, 50);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 36px sans-serif';
