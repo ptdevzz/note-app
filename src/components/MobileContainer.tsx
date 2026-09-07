@@ -5,10 +5,10 @@ import { calculateLoveDays } from '@/lib/dateUtils';
 
 interface MobileContainerProps {
   children: React.ReactNode;
-  startDate?: string; // Format YYYY-MM-DD, e.g. "2026-04-18" (18/04/2026)
+  startDate?: string; // Format YYYY-MM-DD, e.g. "2026-06-06" (06/06/2026)
 }
 
-export default function MobileContainer({ children, startDate = '2026-04-18' }: MobileContainerProps) {
+export default function MobileContainer({ children, startDate = '2026-06-06' }: MobileContainerProps) {
   const loveDays = calculateLoveDays(startDate);
 
   return (

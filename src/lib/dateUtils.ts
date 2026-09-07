@@ -63,9 +63,9 @@ export function getUpcomingWeeksList(count: number = 8): WeekendDates[] {
 }
 
 /**
- * Tính số ngày yêu nhau tự động từ ngày bắt đầu 18/04/2026
+ * Tính số ngày yêu nhau tự động từ ngày bắt đầu 06/06/2026
  */
-export function calculateLoveDays(startDateStr: string = '2026-04-18'): number {
+export function calculateLoveDays(startDateStr: string = '2026-06-06'): number {
   const start = new Date(startDateStr);
   const now = new Date();
   const diffTime = now.getTime() - start.getTime();

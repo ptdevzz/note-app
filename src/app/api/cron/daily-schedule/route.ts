@@ -94,15 +94,49 @@ export async function GET() {
       data: { url: '/?tab=timetable' },
     };
 
-    // Lấy token đăng ký Push Notification của Bé Yêu (Role GF) từ Firestore
+    // Gửi push notification cho CẢ HAI role (GF + BF)
     let sentCount = 0;
-    if (isFirebaseConfigured && db) {
-      const gfSubSnap = await getDoc(doc(db, 'push_subscriptions', 'GF'));
-      if (gfSubSnap.exists()) {
-        const pushSubscription = gfSubSnap.data().subscription;
-        if (pushSubscription && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-          await webPush.sendNotification(pushSubscription, JSON.stringify(notificationPayload));
-          sentCount++;
+    const roles = ['GF', 'BF'];
+
+    if (isFirebaseConfigured && db && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+      for (const role of roles) {
+        try {
+          const subSnap = await getDoc(doc(db, 'push_subscriptions', role));
+          if (!subSnap.exists()) {
+            console.log(`[cron] Không có subscription cho role ${role}`);
+            continue;
+          }
+
+          const subscriptions: any[] = subSnap.data()?.subscriptions || [];
+          if (subscriptions.length === 0) {
+            console.log(`[cron] Danh sách subscription rỗng cho role ${role}`);
+            continue;
+          }
+
+          const expiredEndpoints: string[] = [];
+
+          for (const sub of subscriptions) {
+            try {
+              await webPush.sendNotification(sub, JSON.stringify(notificationPayload));
+              sentCount++;
+              console.log(`[cron] ✅ Đã gửi push tới ${role}:`, sub.endpoint?.slice(-20));
+            } catch (err: any) {
+              console.warn(`[cron] ❌ Lỗi gửi push tới ${role}:`, err.statusCode, err.body || err.message);
+              if (err.statusCode === 410 || err.statusCode === 404) {
+                expiredEndpoints.push(sub.endpoint);
+              }
+            }
+          }
+
+          // Dọn subscription hết hạn
+          if (expiredEndpoints.length > 0) {
+            const { setDoc } = await import('firebase/firestore');
+            const cleanedSubs = subscriptions.filter((s: any) => !expiredEndpoints.includes(s.endpoint));
+            await setDoc(doc(db, 'push_subscriptions', role), { subscriptions: cleanedSubs, updatedAt: Date.now() });
+            console.log(`[cron] 🧹 Đã dọn ${expiredEndpoints.length} subscription hết hạn cho ${role}`);
+          }
+        } catch (e) {
+          console.warn(`[cron] Lỗi xử lý push cho role ${role}:`, e);
         }
       }
     }
@@ -111,10 +145,11 @@ export async function GET() {
       success: true,
       sentCount,
       todaySubjectsCount: todayItems.length,
-      message: `Đã tự động gửi thông báo lịch học hôm nay cho Bé Yêu!`,
+      message: `Đã gửi thông báo lịch học hôm nay cho cả 2 (${sentCount} thiết bị)!`,
     });
   } catch (error: any) {
     console.error('Lỗi Cron daily-schedule:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

@@ -12,7 +12,7 @@ export default function AdminConfigPage() {
   // Config States
   const [partner1Name, setPartner1Name] = useState('Anh iu');
   const [partner2Name, setPartner2Name] = useState('Bé Yêu');
-  const [startDate, setStartDate] = useState('2026-04-18');
+  const [startDate, setStartDate] = useState('2026-06-06');
   const [partner2Email, setPartner2Email] = useState('');
   const [resendKey, setResendKey] = useState('');
   
