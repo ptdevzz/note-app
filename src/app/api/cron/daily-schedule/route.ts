@@ -29,9 +29,32 @@ export async function GET() {
   try {
     const now = new Date();
     // Giờ Việt Nam UTC+7
-    const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-    const jsDay = vnTime.getUTCDay();
-    const currentDow = jsDay === 0 ? 8 : jsDay + 1; // 2: T2 -> 7: T7
+    // Vercel Cron chạy lúc 23:00 UTC (tương đương 06:00 sáng VN ngày hôm sau).
+    // Dùng Intl.DateTimeFormat để lấy chính xác ngày/tháng/năm theo múi giờ Asia/Ho_Chi_Minh
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      weekday: 'short',
+    });
+    
+    const parts = formatter.formatToParts(now);
+    const partMap: Record<string, string> = {};
+    parts.forEach(p => { partMap[p.type] = p.value; });
+
+    const year = parseInt(partMap.year);
+    const month = parseInt(partMap.month) - 1; // 0-11
+    const day = parseInt(partMap.day);
+    
+    // Tạo Date object đại diện 00:00:00 của ngày hôm nay theo giờ VN
+    const todayZero = new Date(year, month, day);
+
+    // Thứ trong tuần theo giờ VN (Sunday = 0 -> 8, Monday = 1 -> 2, ..., Saturday = 6 -> 7)
+    const dayOfWeekMap: Record<string, number> = {
+      'Mon': 2, 'Tue': 3, 'Wed': 4, 'Thu': 5, 'Fri': 6, 'Sat': 7, 'Sun': 8
+    };
+    const currentDow = dayOfWeekMap[partMap.weekday] || 8;
 
     // Chỉ áp dụng cho ngày đi học T2 -> T7
     if (currentDow > 7) {
@@ -58,7 +81,6 @@ export async function GET() {
       const subStart = parseDate(sub.startDate);
       const subEnd = parseDate(sub.endDate);
       if (subStart && subEnd) {
-        const todayZero = new Date(vnTime.getUTCFullYear(), vnTime.getUTCMonth(), vnTime.getUTCDate());
         const sStart = new Date(subStart.getFullYear(), subStart.getMonth(), subStart.getDate());
         const sEnd = new Date(subEnd.getFullYear(), subEnd.getMonth(), subEnd.getDate());
         if (todayZero < sStart || todayZero > sEnd) return;
