@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { GraduationCap } from 'lucide-react';
 import { CLASS_NAME } from '@/lib/constants';
 import { getSubjectsForDate } from '@/lib/timetableUtils';
@@ -11,7 +11,17 @@ interface TodayScheduleWidgetProps {
 }
 
 export default function TodayScheduleWidget({ timetable }: TodayScheduleWidgetProps) {
-  const todaySubjects = useMemo(() => getSubjectsForDate(timetable), [timetable]);
+  const [selectedGroup, setSelectedGroup] = useState<'N1' | 'N2'>('N1');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('usweekends_tkb_group');
+    if (saved === 'N1' || saved === 'N2') setSelectedGroup(saved);
+  }, []);
+
+  const todaySubjects = useMemo(
+    () => getSubjectsForDate(timetable, new Date(), selectedGroup),
+    [timetable, selectedGroup]
+  );
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-md">

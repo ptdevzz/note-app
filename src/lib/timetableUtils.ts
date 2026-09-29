@@ -4,10 +4,17 @@ export interface TodayScheduleEntry extends TimetableScheduleItem {
   subject: TimetableSubject;
 }
 
-/** Parse chuỗi DD/MM/YYYY thành Date (00:00 local) */
-function parseDmy(dateStr: string): Date {
-  const [d, m, y] = dateStr.split('/').map(Number);
-  return new Date(y, m - 1, d);
+/** Parse chuỗi DD/MM/YYYY hoặc YYYY-MM-DD thành Date (00:00 local) */
+function parseDateStr(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  if (dateStr.includes('/')) {
+    const [d, m, y] = dateStr.split('/').map(Number);
+    return new Date(y, m - 1, d);
+  } else if (dateStr.includes('-')) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return null;
 }
 
 function stripTime(date: Date): Date {
@@ -23,18 +30,30 @@ export function toTimetableDayOfWeek(date: Date): number {
 /**
  * Lấy danh sách tiết học của một ngày cụ thể,
  * chỉ tính các môn đang trong khoảng startDate..endDate.
+ * Lọc theo group (mặc định N1) — chỉ trả về schedule với group === 'ALL' hoặc group === selectedGroup.
  */
-export function getSubjectsForDate(timetable: TimetableData, date: Date = new Date()): TodayScheduleEntry[] {
+export function getSubjectsForDate(
+  timetable: TimetableData,
+  date: Date = new Date(),
+  selectedGroup: 'N1' | 'N2' = 'N1'
+): TodayScheduleEntry[] {
   const dayOfWeek = toTimetableDayOfWeek(date);
   const target = stripTime(date);
 
   return timetable.subjects.flatMap((subject) => {
-    const start = stripTime(parseDmy(subject.startDate));
-    const end = stripTime(parseDmy(subject.endDate));
-    if (target < start || target > end) return [];
+    const start = parseDateStr(subject.startDate);
+    const end = parseDateStr(subject.endDate);
+    if (start && end) {
+      const sStart = stripTime(start);
+      const sEnd = stripTime(end);
+      if (target < sStart || target > sEnd) return [];
+    }
 
     return subject.schedules
-      .filter((schedule) => schedule.dayOfWeek === dayOfWeek)
+      .filter((schedule) =>
+        schedule.dayOfWeek === dayOfWeek &&
+        (schedule.group === 'ALL' || schedule.group === selectedGroup)
+      )
       .map((schedule) => ({ ...schedule, subject }));
   });
 }

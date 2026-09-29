@@ -201,7 +201,7 @@ function MainAppContent({ defaultRole, onLogout }: MainAppContentProps) {
       {activeTab === 'home' && (
         <HomeTab
           isLoading={isHomeLoading}
-          timetable={DEFAULT_TIMETABLE}
+          timetable={timetable}
           places={places}
           partnerEmail={partnerEmail}
           loveNote={loveNote}
