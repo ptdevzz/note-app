@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import webPush from 'web-push';
 import defaultScheduleData from '@/data/schedule_26cdtt2.json';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
@@ -11,6 +12,9 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@usweekends.app'
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webPush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 }
+
+// Cho phép Vercel serverless chạy lâu hơn (max 60s cho Hobby)
+export const maxDuration = 60;
 
 // Parse date string "DD/MM/YYYY" or "YYYY-MM-DD"
 function parseDate(dateStr: string): Date | null {
@@ -25,7 +29,17 @@ function parseDate(dateStr: string): Date | null {
   return null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Verify CRON_SECRET nếu đã set (Vercel gửi qua header Authorization)
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      console.warn('[cron] ❌ Unauthorized cron call');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   try {
     const now = new Date();
     // Giờ Việt Nam UTC+7
