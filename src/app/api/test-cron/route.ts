@@ -4,6 +4,9 @@ import defaultScheduleData from '@/data/schedule_26cdtt2.json';
 import { db, isFirebaseConfigured } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@usweekends.app';
